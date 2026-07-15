@@ -51,12 +51,17 @@ class InventarioViewController: UIViewController, UITableViewDataSource, UITable
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor), tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
+        let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tap.cancelsTouchesInView = false; view.addGestureRecognizer(tap)
         loadData()
     }
     override func viewWillAppear(_ animated: Bool) { super.viewWillAppear(animated); loadData() }
 
     private func loadData() {
-        Task { do { productos = try await fb.getList("productos"); buildCategories(); applyFilters(); tableView.reloadData() } catch { print("Error: \(error)") } }
+        Task { do {
+            productos = try await fb.getList("productos")
+            await MainActor.run { buildCategories(); applyFilters(); tableView.reloadData() }
+        } catch { print("Error: \(error)") } }
     }
 
     private func buildCategories() {
@@ -93,6 +98,10 @@ class InventarioViewController: UIViewController, UITableViewDataSource, UITable
 
     func searchBar(_ searchBar: UISearchBar, textDidChange text: String) { applyFilters(); tableView.reloadData() }
 
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) { searchBar.resignFirstResponder() }
+
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) { view.endEditing(true) }
+
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { filtered.count }
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as? InventarioProductCell else { return UITableViewCell() }
@@ -101,6 +110,8 @@ class InventarioViewController: UIViewController, UITableViewDataSource, UITable
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) { tableView.deselectRow(at: indexPath, animated: true); showProductoForm(filtered[indexPath.row]) }
 
     @objc private func addProducto() { showProductoForm(nil) }
+
+    @objc private func dismissKeyboard() { view.endEditing(true) }
 
     private func nextCodigo() -> String {
         var max = 0
