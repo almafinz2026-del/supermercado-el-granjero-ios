@@ -1,6 +1,6 @@
 import UIKit
 
-class LoginViewController: UIViewController {
+class LoginViewController: UIViewController, UITextFieldDelegate {
     
     private let userTextField = UITextField()
     private let passTextField = UITextField()
@@ -23,6 +23,18 @@ class LoginViewController: UIViewController {
         setupUI()
         startParticleAnimation()
         loadSavedCredentials()
+        setupKeyboardDismiss()
+    }
+    
+    private func setupKeyboardDismiss() {
+        let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        view.addGestureRecognizer(tap)
+        userTextField.delegate = self
+        passTextField.delegate = self
+    }
+    
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
     }
     
     private func setupGradientBackground() {
@@ -318,6 +330,16 @@ class LoginViewController: UIViewController {
         }
     }
     
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        if textField == userTextField {
+            passTextField.becomeFirstResponder()
+        } else {
+            textField.resignFirstResponder()
+            loginTapped()
+        }
+        return true
+    }
+    
     private func triggerShake() {
         let shake = CAKeyframeAnimation(keyPath: "transform.translation.x")
         shake.values = [0, 12, -12, 8, -8, 4, -4, 0]
@@ -329,6 +351,7 @@ class LoginViewController: UIViewController {
     }
     
     @objc private func loginTapped() {
+        dismissKeyboard()
         guard let user = userTextField.text?.trimmingCharacters(in: .whitespaces), !user.isEmpty,
               let password = passTextField.text?.trimmingCharacters(in: .whitespaces), !password.isEmpty else {
             triggerShake()
