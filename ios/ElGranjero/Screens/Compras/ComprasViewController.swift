@@ -7,117 +7,128 @@ class ComprasViewController: UIViewController, UITableViewDataSource, UITableVie
     private var productos: [[String: Any]] = []
     private let fb = FirebaseService.shared
 
+    private var tempProv = ""
+    private var tempIva = 0.0
+    private var tempItems: [[String: Any]] = []
+    private var tempPagado = false
+
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = UIColor(red: 0.95, green: 0.94, blue: 0.92, alpha: 1); title = "Compras"
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(nuevaCompra))
         tableView.dataSource = self; tableView.delegate = self; tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
-        tableView.backgroundColor = .clear; tableView.separatorStyle = .none; tableView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(tableView)
+        tableView.backgroundColor = .clear; tableView.separatorStyle = .none; tableView.rowHeight = 56
+        tableView.translatesAutoresizingMaskIntoConstraints = false; view.addSubview(tableView)
         NSLayoutConstraint.activate([tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor), tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor), tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor), tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)])
         loadData()
     }
     override func viewWillAppear(_ animated: Bool) { super.viewWillAppear(animated); loadData() }
 
     private func loadData() {
-        Task {
-            do {
-                async let c = fb.getList("compras"); async let p = fb.getList("productos")
-                (compras, productos) = try await (c, p); tableView.reloadData()
-            } catch { print("Error: \(error)") }
-        }
+        Task { do { async let c = fb.getList("compras"); async let p = fb.getList("productos"); (compras, productos) = try await (c, p); tableView.reloadData() } catch { print("Error: \(error)") } }
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { compras.count }
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
         let c = compras[indexPath.row]; cell.textLabel?.numberOfLines = 2
-        let total = FirebaseService.formatMoney(c["total"] as? Double ?? 0)
-        let prov = c["proveedor"] as? String ?? "?"
-        let items = c["items"] as? [[String: Any]] ?? []
-        let iva = c["iva"] as? Double ?? 0
-        let fecha = (c["fecha"] as? String ?? "").prefix(10)
-        cell.textLabel?.text = "\(prov)\n\(items.count) items | IVA \(Int(iva))% | \(total) | \(fecha)"
-        cell.textLabel?.font = .systemFont(ofSize: 12); cell.backgroundColor = .white
-        cell.layer.cornerRadius = 8; cell.layer.masksToBounds = true; cell.accessoryType = .disclosureIndicator
+        cell.textLabel?.text = "\(c["proveedor"] as? String ?? "?")\n\((c["items"] as? [[String: Any]] ?? []).count) items | IVA \(Int(c["iva"] as? Double ?? 0))% | \(FirebaseService.formatMoney(c["total"] as? Double ?? 0)) | \((c["fecha"] as? String ?? "").prefix(10))"
+        cell.textLabel?.font = .systemFont(ofSize: 12); cell.backgroundColor = .white; cell.layer.cornerRadius = 8; cell.layer.masksToBounds = true
         return cell
     }
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat { 56 }
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) { tableView.deselectRow(at: indexPath, animated: true) }
 
     @objc private func nuevaCompra() {
-        showCompraForm(compra: nil)
+        tempProv = ""
+        tempIva = 0.0
+        tempItems = []
+        tempPagado = false
+        showForm()
     }
 
-    private func showCompraForm(compra existing: [String: Any]?) {
-        var items = existing?["items"] as? [[String: Any]] ?? []
-        let isEdit = existing != nil
-        let alert = UIAlertController(title: isEdit ? "Editar Compra" : "Nueva Compra", message: "\n\n\n\n\n", preferredStyle: .alert)
+    private func showForm() {
+        let alert = UIAlertController(title: "Nueva Compra", message: "\n\n\n\n\n", preferredStyle: .alert)
         let wid: CGFloat = 270
 
-        // Proveedor
-        let provTF = UITextField(); provTF.placeholder = "Proveedor"; provTF.borderStyle = .roundedRect; provTF.font = .systemFont(ofSize: 14)
-        provTF.frame = CGRect(x: 8, y: 10, width: wid - 16, height: 32); alert.view.addSubview(provTF)
-        if let p = existing?["proveedor"] as? String { provTF.text = p }
+        let provTF = UITextField()
+        provTF.placeholder = "Proveedor"
+        provTF.borderStyle = .roundedRect
+        provTF.font = .systemFont(ofSize: 14)
+        provTF.text = tempProv
+        provTF.frame = CGRect(x: 8, y: 10, width: wid - 16, height: 32)
+        alert.view.addSubview(provTF)
 
-        // IVA
-        let ivaTF = UITextField(); ivaTF.placeholder = "IVA %"; ivaTF.borderStyle = .roundedRect; ivaTF.keyboardType = .decimalPad; ivaTF.font = .systemFont(ofSize: 14)
-        ivaTF.frame = CGRect(x: 8, y: 48, width: wid - 16, height: 32); alert.view.addSubview(ivaTF)
-        if let iv = existing?["iva"] as? Double { ivaTF.text = "\(iv)" } else { ivaTF.text = "0" }
+        let ivaTF = UITextField()
+        ivaTF.placeholder = "IVA %"
+        ivaTF.borderStyle = .roundedRect
+        ivaTF.keyboardType = .decimalPad
+        ivaTF.font = .systemFont(ofSize: 14)
+        ivaTF.text = tempIva > 0 ? String(format: "%.0f", tempIva) : "0"
+        ivaTF.frame = CGRect(x: 8, y: 48, width: wid - 16, height: 32)
+        alert.view.addSubview(ivaTF)
 
-        // Items button
-        let itemsBtn = UIButton(type: .system); itemsBtn.setTitle(items.isEmpty ? "+ Agregar Productos" : "\(items.count) producto(s) - toca para editar", for: .normal)
-        itemsBtn.titleLabel?.font = .systemFont(ofSize: 13); itemsBtn.frame = CGRect(x: 8, y: 86, width: wid - 16, height: 32)
-        itemsBtn.addAction(UIAction { [weak self] _ in
-            guard let self = self else { return }
-            alert.dismiss(animated: true) {
-                self.showItemPicker(currentItems: items) { picked in
-                    items = picked; self.showCompraForm(compra: existing)
+        let itemsBtn = UIButton(type: .system)
+        itemsBtn.setTitle(tempItems.isEmpty ? "+ Agregar Productos" : "\(tempItems.count) producto(s) - tocar para editar", for: .normal)
+        itemsBtn.titleLabel?.font = .systemFont(ofSize: 13)
+        itemsBtn.frame = CGRect(x: 8, y: 86, width: wid - 16, height: 32)
+        
+        itemsBtn.addAction(UIAction(handler: { [weak self, weak alert] _ in
+            guard let self = self, let alert = alert else { return }
+            self.tempProv = provTF.text ?? ""
+            self.tempIva = Double(ivaTF.text?.replacingOccurrences(of: ",", with: ".") ?? "") ?? 0.0
+            
+            alert.dismiss(animated: true) { [weak self] in
+                guard let self = self else { return }
+                self.showItemPicker(currentItems: self.tempItems) { [weak self] picked in
+                    guard let self = self else { return }
+                    self.tempItems = picked
+                    self.showForm()
                 }
             }
-        }, for: .touchUpInside)
+        }), for: .touchUpInside)
         alert.view.addSubview(itemsBtn)
 
-        // Pagado toggle
-        let pagadoLabel = UILabel(); pagadoLabel.text = "Pagado de Caja:"; pagadoLabel.font = .systemFont(ofSize: 13)
-        pagadoLabel.frame = CGRect(x: 8, y: 124, width: 150, height: 28); alert.view.addSubview(pagadoLabel)
-        let pagadoSw = UISwitch(); pagadoSw.frame = CGRect(x: wid - 70, y: 120, width: 51, height: 31)
-        pagadoSw.isOn = existing?["pagado"] as? Bool ?? false; alert.view.addSubview(pagadoSw)
+        let pagadoLabel = UILabel()
+        pagadoLabel.text = "Pagado de Caja:"
+        pagadoLabel.font = .systemFont(ofSize: 13)
+        pagadoLabel.frame = CGRect(x: 8, y: 124, width: 150, height: 28)
+        alert.view.addSubview(pagadoLabel)
+        
+        let pagadoSw = UISwitch()
+        pagadoSw.isOn = tempPagado
+        pagadoSw.frame = CGRect(x: wid - 70, y: 120, width: 51, height: 31)
+        pagadoSw.addAction(UIAction(handler: { [weak self] _ in
+            self?.tempPagado = pagadoSw.isOn
+        }), for: .valueChanged)
+        alert.view.addSubview(pagadoSw)
 
         alert.addAction(UIAlertAction(title: "Guardar", style: .default) { [weak self] _ in
-            guard let self = self, let prov = provTF.text?.trimmingCharacters(in: .whitespaces), !prov.isEmpty else { return }
+            guard let self = self else { return }
+            let prov = provTF.text?.trimmingCharacters(in: .whitespaces) ?? ""
+            guard !prov.isEmpty else { return }
             let iva = Double(ivaTF.text?.replacingOccurrences(of: ",", with: ".") ?? "") ?? 0
-            let total = items.reduce(0.0) { s, i in
-                let q = Double(i["cantidad"] as? Int ?? 0); let p = i["precio_compra"] as? Double ?? 0; return s + q * p
-            }
+            let finalItems = self.tempItems
+            let total = finalItems.reduce(0.0) { s, i in s + Double(i["cantidad"] as? Int ?? 0) * (i["precio_compra"] as? Double ?? 0) }
+            let isPagado = pagadoSw.isOn
+            guard !finalItems.isEmpty else { return }
             Task {
                 do {
-                    var data: [String: Any] = ["proveedor": prov, "total": total, "iva": iva, "pagado": pagadoSw.isOn, "items": items, "fecha": FirebaseService.nowString()]
-                    if let eid = existing?["id"] as? Int {
-                        data["id"] = eid; try await self.fb.updateInList("compras", idValue: eid, updates: data)
-                    } else {
-                        data["id"] = FirebaseService.nextId(in: self.compras); try await self.fb.addToList("compras", item: data)
-                    }
-                    // Update product stock & prices
-                    for it in items {
+                    let data: [String: Any] = ["id": FirebaseService.nextId(in: self.compras), "proveedor": prov, "total": total, "iva": iva, "pagado": isPagado, "items": finalItems, "fecha": FirebaseService.nowString()]
+                    try await self.fb.addToList("compras", item: data)
+                    for it in finalItems {
                         if let pid = it["producto_id"] as? Int {
                             let prods = try await self.fb.getList("productos")
-                            if var prod = prods.first(where: { ($0["id"] as? Int) == pid }) {
-                                let qty = it["cantidad"] as? Int ?? 0; let cost = it["precio_compra"] as? Double ?? 0
-                                let newStock = (prod["stock_actual"] as? Int ?? 0) + qty
-                                var up: [String: Any] = ["stock_actual": newStock, "precio_compra": cost]
-                                if let pv = it["precio_venta"] as? Double { up["precio_venta"] = pv }
-                                try await self.fb.updateInList("productos", idValue: pid, updates: up)
+                            if let p = prods.first(where: { ($0["id"] as? Int) == pid }) {
+                                let newStock = (p["stock_actual"] as? Int ?? 0) + (it["cantidad"] as? Int ?? 0)
+                                let cost = it["precio_compra"] as? Double ?? 0; let pv = it["precio_venta"] as? Double ?? 0
+                                try await self.fb.updateInList("productos", idValue: pid, updates: ["stock_actual": newStock, "precio_compra": cost, "precio_venta": pv])
                             }
                         }
                     }
-                    // Deduct from caja if pagado
-                    if pagadoSw.isOn, let abierta = (try await self.fb.getList("cajas")).first(where: { ($0["estado"] as? String) == "abierta" }), let cid = abierta["id"] as? Int {
-                        let egresos = (abierta["egresos"] as? Double ?? 0) + total
-                        try await self.fb.updateInList("cajas", idValue: cid, updates: ["egresos": egresos])
+                    if isPagado, let ab = (try await self.fb.getList("cajas")).first(where: { ($0["estado"] as? String) == "abierta" }), let cid = ab["id"] as? Int {
+                        try await self.fb.updateInList("cajas", idValue: cid, updates: ["egresos": (ab["egresos"] as? Double ?? 0) + total])
                     }
                     self.loadData()
-                } catch { print("Error save compra: \(error)") }
+                } catch { print("Error save: \(error)") }
             }
         })
         alert.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
@@ -126,20 +137,13 @@ class ComprasViewController: UIViewController, UITableViewDataSource, UITableVie
 
     private func showItemPicker(currentItems: [[String: Any]], completion: @escaping ([[String: Any]]) -> Void) {
         let vc = CompraItemPickerVC(productos: productos, items: currentItems, onDone: completion)
-        let nav = UINavigationController(rootViewController: vc); nav.modalPresentationStyle = .pageSheet
-        if let sheet = nav.sheetPresentationController { sheet.detents = [.large()] }
-        present(nav, animated: true)
+        let nav = UINavigationController(rootViewController: vc); nav.modalPresentationStyle = .pageSheet; present(nav, animated: true)
     }
 }
 
-// MARK: - Item Picker
 class CompraItemPickerVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UISearchBarDelegate {
-
-    private let tableView = UITableView()
-    private let searchBar = UISearchBar()
-    private var allProds: [[String: Any]] = []
-    private var filtered: [[String: Any]] = []
-    private var selected: [[String: Any]] = [] // current cart
+    private let tableView = UITableView(); private let searchBar = UISearchBar()
+    private var allProds: [[String: Any]] = []; private var filtered: [[String: Any]] = []; private var selected: [[String: Any]] = []
     private let onDone: ([[String: Any]]) -> Void
 
     init(productos: [[String: Any]], items: [[String: Any]], onDone: @escaping ([[String: Any]]) -> Void) {
@@ -149,67 +153,38 @@ class CompraItemPickerVC: UIViewController, UITableViewDataSource, UITableViewDe
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     override func viewDidLoad() {
-        super.viewDidLoad()
-        title = "Productos de la Compra"; view.backgroundColor = UIColor(red: 0.95, green: 0.94, blue: 0.92, alpha: 1)
-        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Listo (\(selected.count))", style: .done, target: self, action: #selector(doneTapped))
+        super.viewDidLoad(); title = "Productos"; view.backgroundColor = UIColor(red: 0.95, green: 0.94, blue: 0.92, alpha: 1)
+        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Listo (\(selected.count))", style: .done, target: self, action: #selector(done))
 
-        searchBar.delegate = self; searchBar.placeholder = "Buscar producto..."
-        searchBar.translatesAutoresizingMaskIntoConstraints = false; view.addSubview(searchBar)
-
-        tableView.dataSource = self; tableView.delegate = self; tableView.register(UITableViewCell.self, forCellReuseIdentifier: "icell")
-        tableView.backgroundColor = .clear; tableView.translatesAutoresizingMaskIntoConstraints = false; view.addSubview(tableView)
-
-        NSLayoutConstraint.activate([
-            searchBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor), searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.topAnchor.constraint(equalTo: searchBar.bottomAnchor), tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor), tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-        ])
+        searchBar.delegate = self; searchBar.placeholder = "Buscar..."; searchBar.translatesAutoresizingMaskIntoConstraints = false; view.addSubview(searchBar)
+        tableView.dataSource = self; tableView.delegate = self; tableView.register(UITableViewCell.self, forCellReuseIdentifier: "ic"); tableView.backgroundColor = .clear; tableView.translatesAutoresizingMaskIntoConstraints = false; view.addSubview(tableView)
+        NSLayoutConstraint.activate([searchBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor), searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor), searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor), tableView.topAnchor.constraint(equalTo: searchBar.bottomAnchor), tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor), tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor), tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)])
     }
 
-    func searchBar(_ searchBar: UISearchBar, textDidChange text: String) {
-        if text.isEmpty { filtered = allProds } else {
-            filtered = allProds.filter { ($0["nombre"] as? String ?? "").localizedCaseInsensitiveContains(text) || ($0["codigo"] as? String ?? "").localizedCaseInsensitiveContains(text) }
-        }
-        tableView.reloadData()
-    }
-
+    func searchBar(_ searchBar: UISearchBar, textDidChange text: String) { filtered = text.isEmpty ? allProds : allProds.filter { ($0["nombre"] as? String ?? "").localizedCaseInsensitiveContains(text) }; tableView.reloadData() }
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { filtered.count }
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "icell", for: indexPath)
-        let p = filtered[indexPath.row]; let pid = p["id"] as? Int ?? 0; let name = p["nombre"] as? String ?? "?"
-        let stock = p["stock_actual"] as? Int ?? 0; let cost = FirebaseService.formatMoney(p["precio_compra"] as? Double ?? 0)
-        if let existing = selected.first(where: { ($0["producto_id"] as? Int) == pid }) {
-            let q = existing["cantidad"] as? Int ?? 0; cell.textLabel?.text = "✓ \(name) — x\(q)" }
-        else { cell.textLabel?.text = "\(name) — Stock: \(stock) | \(cost)" }
-        cell.textLabel?.font = .systemFont(ofSize: 12); cell.backgroundColor = .white; cell.accessoryType = .detailButton
-        return cell
+        let cell = tableView.dequeueReusableCell(withIdentifier: "ic", for: indexPath); let p = filtered[indexPath.row]; let pid = p["id"] as? Int ?? 0
+        if let ex = selected.first(where: { ($0["producto_id"] as? Int) == pid }) { cell.textLabel?.text = "✓ \(p["nombre"] as? String ?? "") — x\(ex["cantidad"] as? Int ?? 0)" }
+        else { cell.textLabel?.text = "\(p["nombre"] as? String ?? "") — Stock: \(p["stock_actual"] as? Int ?? 0) | \(FirebaseService.formatMoney(p["precio_compra"] as? Double ?? 0))" }
+        cell.textLabel?.font = .systemFont(ofSize: 12); cell.backgroundColor = .white; return cell
     }
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-        let p = filtered[indexPath.row]; let pid = p["id"] as? Int ?? 0; let name = p["nombre"] as? String ?? "?"
-        let alert = UIAlertController(title: name, message: "Precio compra: \(FirebaseService.formatMoney(p["precio_compra"] as? Double ?? 0))", preferredStyle: .alert)
-        alert.addTextField { tf in tf.placeholder = "Cantidad"; tf.keyboardType = .numberPad; tf.text = "1" }
-        alert.addTextField { tf in tf.placeholder = "Precio Compra"; tf.keyboardType = .decimalPad; tf.text = "\(p["precio_compra"] as? Double ?? 0)" }
-        alert.addTextField { tf in tf.placeholder = "Precio Venta"; tf.keyboardType = .decimalPad; tf.text = "\(p["precio_venta"] as? Double ?? 0)" }
-        alert.addAction(UIAlertAction(title: "Agregar", style: .default) { [weak self] _ in
+        tableView.deselectRow(at: indexPath, animated: true); let p = filtered[indexPath.row]; let pid = p["id"] as? Int ?? 0; let name = p["nombre"] as? String ?? ""
+        let a = UIAlertController(title: name, message: "Costo: \(FirebaseService.formatMoney(p["precio_compra"] as? Double ?? 0))", preferredStyle: .alert)
+        a.addTextField { tf in tf.placeholder = "Cantidad"; tf.keyboardType = .numberPad; tf.text = "1" }
+        a.addTextField { tf in tf.placeholder = "Precio Compra"; tf.keyboardType = .decimalPad; tf.text = "\(p["precio_compra"] as? Double ?? 0)" }
+        a.addTextField { tf in tf.placeholder = "Precio Venta"; tf.keyboardType = .decimalPad; tf.text = "\(p["precio_venta"] as? Double ?? 0)" }
+        a.addAction(UIAlertAction(title: "Agregar", style: .default) { [weak self] _ in
             guard let self = self else { return }
-            let q = Int(alert.textFields?[0].text ?? "") ?? 1
-            let pc = Double(alert.textFields?[1].text?.replacingOccurrences(of: ",", with: ".") ?? "") ?? 0
-            let pv = Double(alert.textFields?[2].text?.replacingOccurrences(of: ",", with: ".") ?? "") ?? 0
-            if let idx = self.selected.firstIndex(where: { ($0["producto_id"] as? Int) == pid }) { self.selected.remove(at: idx) }
+            let q = Int(a.textFields?[0].text ?? "") ?? 1
+            let pc = Double(a.textFields?[1].text?.replacingOccurrences(of: ",", with: ".") ?? "") ?? 0
+            let pv = Double(a.textFields?[2].text?.replacingOccurrences(of: ",", with: ".") ?? "") ?? 0
+            self.selected.removeAll(where: { ($0["producto_id"] as? Int) == pid })
             self.selected.append(["producto_id": pid, "nombre": name, "cantidad": q, "precio_compra": pc, "precio_venta": pv])
-            self.tableView.reloadData()
-            self.navigationItem.rightBarButtonItem?.title = "Listo (\(self.selected.count))"
+            self.tableView.reloadData(); self.navigationItem.rightBarButtonItem?.title = "Listo (\(self.selected.count))"
         })
-        alert.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
-        present(alert, animated: true)
+        a.addAction(UIAlertAction(title: "Cancelar", style: .cancel)); present(a, animated: true)
     }
-    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-        let p = filtered[indexPath.row]; let pid = p["id"] as? Int ?? 0
-        if editingStyle == .delete, let idx = selected.firstIndex(where: { ($0["producto_id"] as? Int) == pid }) {
-            selected.remove(at: idx); tableView.reloadData(); navigationItem.rightBarButtonItem?.title = "Listo (\(selected.count))"
-        }
-    }
-    @objc private func doneTapped() { dismiss(animated: true) { self.onDone(self.selected) } }
+    @objc private func done() { dismiss(animated: true) { self.onDone(self.selected) } }
 }

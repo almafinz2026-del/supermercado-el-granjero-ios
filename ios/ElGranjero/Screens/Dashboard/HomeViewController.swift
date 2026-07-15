@@ -227,7 +227,7 @@ class HomeViewController: UIViewController {
         title = filteredItems[index].title
         navigationItem.rightBarButtonItems = vc.navigationItem.rightBarButtonItems
         navigationItem.rightBarButtonItem = vc.navigationItem.rightBarButtonItem
-        navigationItem.leftBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "line.3.horizontal"), style: .plain, target: self, action: #selector(toggleSidebar))
+        navigationItem.leftBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "line.3.horizontal"), style: .plain, target: self, action: #selector(menuSidebarTapped))
 
         // Refresh sidebar highlights
         for case let stackView as UIStackView in sidebarView.subviews.compactMap({ $0 as? UIScrollView }).first?.subviews.compactMap({ $0 as? UIStackView }) ?? [] {
@@ -242,7 +242,7 @@ class HomeViewController: UIViewController {
         hideSidebar()
     }
 
-    @objc private func toggleSidebar() {
+    @objc private func menuSidebarTapped() {
         if isSidebarOpen {
             hideSidebar()
         } else {
