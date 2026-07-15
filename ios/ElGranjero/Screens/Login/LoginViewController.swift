@@ -415,9 +415,10 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
                 // Step 6: Navigate to home
                 await MainActor.run {
                     let homeVC = HomeViewController()
-                    homeVC.modalPresentationStyle = .fullScreen
-                    homeVC.modalTransitionStyle = .crossDissolve
-                    self.present(homeVC, animated: true)
+                    let nav = UINavigationController(rootViewController: homeVC)
+                    nav.modalPresentationStyle = .fullScreen
+                    nav.modalTransitionStyle = .crossDissolve
+                    self.present(nav, animated: true)
                 }
             } catch {
                 await MainActor.run {
