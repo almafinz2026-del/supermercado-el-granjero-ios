@@ -45,9 +45,7 @@ class SessionManager {
     
     func tienePermiso(_ permiso: String) -> Bool {
         if username == "admin" { return true }
-        let permisoIds = currentUser?["permiso_ids"] as? [Int] ?? []
-        let index = Self.allPermisos.firstIndex(of: permiso) ?? -1
-        return permisoIds.contains(index)
+        return permisos.contains(permiso)
     }
     
     func puede(_ accion: String) -> Bool {
