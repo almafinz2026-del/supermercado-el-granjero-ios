@@ -252,6 +252,7 @@ class ConsumoFormVC: UIViewController, UITableViewDataSource, UITableViewDelegat
         view.backgroundColor = .systemBackground
         title = editingConsumo == nil ? "Nuevo Consumo" : "Editar Consumo"
         navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(cancel))
+        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "barcode.viewfinder"), style: .plain, target: self, action: #selector(abrirScanner))
         setupUI()
         if let sel = productoSeleccionado {
             searchBar.text = sel["producto_nombre"] as? String ?? sel["nombre"] as? String ?? ""
@@ -485,4 +486,26 @@ class ConsumoFormVC: UIViewController, UITableViewDataSource, UITableViewDelegat
     }
 
     @objc private func cancel() { dismiss(animated: true) }
+
+    @objc private func abrirScanner() {
+        let scanner = BarcodeScannerViewController { [weak self] code in
+            guard let self = self else { return }
+            if let p = self.productos.first(where: { ($0["codigo"] as? String) == code || ($0["codigo_barras"] as? String) == code }) {
+                DispatchQueue.main.async {
+                    self.productoSeleccionado = p
+                    self.searchBar.text = p["nombre"] as? String ?? ""
+                    self.resultsTable.isHidden = true
+                    if let card = self.view.viewWithTag(99), let lbl = card.viewWithTag(100) as? UILabel {
+                        lbl.text = p["nombre"] as? String ?? ""
+                        card.subviews.filter { $0 is UILabel && $0.tag != 100 }.forEach { $0.removeFromSuperview() }
+                        let stockLbl = UILabel(); stockLbl.text = "Stock: \(p["stock_actual"] as? Int ?? 0)"
+                        stockLbl.font = .systemFont(ofSize: 12); stockLbl.textColor = .secondaryLabel
+                        stockLbl.translatesAutoresizingMaskIntoConstraints = false; card.addSubview(stockLbl)
+                        NSLayoutConstraint.activate([stockLbl.topAnchor.constraint(equalTo: lbl.bottomAnchor, constant: 2), stockLbl.leadingAnchor.constraint(equalTo: lbl.leadingAnchor)])
+                    }
+                }
+            }
+        }
+        present(scanner, animated: true)
+    }
 }

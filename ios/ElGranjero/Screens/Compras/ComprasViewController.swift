@@ -199,6 +199,10 @@ class CompraItemPickerVC: UIViewController, UITableViewDataSource, UITableViewDe
                     self.selected.append(["producto_id": pid, "nombre": nm, "cantidad": 1, "precio_compra": c, "precio_venta": v])
                     self.tableView.reloadData()
                     self.navigationItem.rightBarButtonItems?[0].title = "Listo (\(self.selected.count))"
+                } else {
+                    let alert = UIAlertController(title: "Código no encontrado", message: "No hay producto con código: \(code)\n¿Desea usar este código?", preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "OK", style: .default))
+                    self.present(alert, animated: true)
                 }
             }
         }, animated: true)
