@@ -15,9 +15,7 @@ class FacturacionViewController: UIViewController, UITableViewDataSource, UITabl
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = UIColor(red: 0.95, green: 0.94, blue: 0.92, alpha: 1); title = "Facturación"
-        let histBtn = UIBarButtonItem(title: "Historial", style: .plain, target: self, action: #selector(verFacturas))
-        let scanBtn = UIBarButtonItem(image: UIImage(systemName: "barcode.viewfinder"), style: .plain, target: self, action: #selector(scanBarcode))
-        navigationItem.rightBarButtonItems = [histBtn, scanBtn]
+        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Facturas", style: .plain, target: self, action: #selector(verFacturas))
 
         searchBar.delegate = self; searchBar.placeholder = "Buscar producto..."; searchBar.translatesAutoresizingMaskIntoConstraints = false; view.addSubview(searchBar)
         productosTable.dataSource = self; productosTable.delegate = self; productosTable.register(UITableViewCell.self, forCellReuseIdentifier: "pc"); productosTable.backgroundColor = .clear; productosTable.translatesAutoresizingMaskIntoConstraints = false; view.addSubview(productosTable)
@@ -111,19 +109,6 @@ class FacturacionViewController: UIViewController, UITableViewDataSource, UITabl
             }
         })
         a.addAction(UIAlertAction(title: "Cancelar", style: .cancel)); present(a, animated: true)
-    }
-
-    @objc private func scanBarcode() {
-        let scanner = BarcodeScannerViewController { [weak self] code in
-            guard let self = self else { return }
-            if let p = self.productos.first(where: { ($0["codigo"] as? String) == code }) {
-                let pid = p["id"] as? Int ?? 0
-                if let i = self.cart.firstIndex(where: { ($0.producto["id"] as? Int) == pid }) { self.cart[i].cantidad += 1 }
-                else { self.cart.append((p, 1)) }
-                self.refreshCart()
-            }
-        }
-        present(scanner, animated: true)
     }
 
     @objc private func verFacturas() {
