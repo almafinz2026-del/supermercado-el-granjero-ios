@@ -66,13 +66,99 @@ class CajaViewController: UIViewController {
             do {
                 let cajas = try await fb.getList("cajas")
                 if let abierta = cajas.first(where: { $0["estado"] as? String == "abierta" }), let id = abierta["id"] as? Int {
-                    try await fb.updateInList("cajas", idValue: id, updates: ["estado": "cerrada", "fecha_cierre": FirebaseService.nowString()])
+                    await MainActor.run { self.pedirCierre(abierta: abierta, id: id) }
                 } else {
-                    var caja: [String: Any] = ["id": FirebaseService.nextId(in: cajas), "estado": "abierta", "ingresos": 0, "egresos": 0, "fecha_apertura": FirebaseService.nowString(), "fecha_cierre": ""]
+                    var caja: [String: Any] = ["id": FirebaseService.nextId(in: cajas), "estado": "abierta", "monto_inicial": 0, "ingresos": 0, "egresos": 0, "fecha_apertura": FirebaseService.nowString(), "fecha_cierre": ""]
                     try await fb.addToList("cajas", item: caja)
+                    await MainActor.run { refresh() }
                 }
-                refresh()
             } catch { print("Error: \(error)") }
         }
+    }
+
+    private func pedirCierre(abierta: [String: Any], id: Int) {
+        let alert = UIAlertController(title: "Cerrar Caja", message: "Ingrese el dinero contado en físico", preferredStyle: .alert)
+        alert.addTextField { tf in tf.placeholder = "Monto real en caja"; tf.keyboardType = .decimalPad }
+        alert.addTextField { tf in tf.placeholder = "Observaciones (opcional)"; tf.text = "" }
+        alert.addAction(UIAlertAction(title: "Cerrar", style: .default) { [weak self] _ in
+            guard let self = self else { return }
+            let realStr = alert.textFields?[0].text?.replacingOccurrences(of: ",", with: ".") ?? "0"
+            let montoReal = Double(realStr) ?? 0
+            let obs = alert.textFields?[1].text ?? ""
+            Task { await self.ejecutarCierre(abierta: abierta, id: id, montoReal: montoReal, obs: obs) }
+        })
+        alert.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
+        present(alert, animated: true)
+    }
+
+    private func ejecutarCierre(abierta: [String: Any], id: Int, montoReal: Double, obs: String) async {
+        do {
+            let ventas = try await fb.getList("ventas")
+            let productos = try await fb.getList("productos")
+            let consumos = try await fb.getList("autoconsumos")
+            let openDate = (abierta["fecha_apertura"] as? String ?? "").prefix(10)
+            let now = FirebaseService.nowString()
+            let inicial = abierta["monto_inicial"] as? Double ?? 0
+            let ingresos = abierta["ingresos"] as? Double ?? 0
+            let egresos = abierta["egresos"] as? Double ?? 0
+
+            var totalVenta = 0.0, totalCosto = 0.0
+            for v in ventas {
+                let created = (v["created_at"] as? String ?? v["fecha"] as? String ?? "").prefix(10)
+                if created >= openDate, (v["metodo_pago"] as? String) != "fiado" {
+                    totalVenta += v["total"] as? Double ?? 0
+                    let items = v["items"] as? [[String: Any]] ?? []
+                    for it in items {
+                        let qty = Double(it["cantidad"] as? Int ?? 1)
+                        let pc = it["precio_compra"] as? Double ?? 0
+                        totalCosto += qty * pc
+                    }
+                }
+            }
+
+            var totalConsumosCosto = 0.0
+            for c in consumos {
+                let cFecha = (c["fecha"] as? String ?? "").prefix(10)
+                if cFecha >= openDate {
+                    let cant = Double(c["cantidad"] as? Int ?? 0)
+                    if let pid = c["producto_id"] as? Int,
+                       let prod = productos.first(where: { ($0["id"] as? Int) == pid }) {
+                        let pc = prod["precio_compra"] as? Double ?? 0
+                        totalConsumosCosto += cant * pc
+                    }
+                }
+            }
+
+            let ganancias = totalVenta - totalCosto - totalConsumosCosto
+            let esperado = inicial + ingresos - egresos
+            let diferencia = esperado - montoReal
+
+            try await fb.updateInList("cajas", idValue: id, updates: [
+                "estado": "cerrada",
+                "fecha_cierre": now,
+                "monto_final_real": montoReal,
+                "ingresos": ingresos,
+                "egresos": egresos,
+                "esperado": esperado,
+                "diferencia": diferencia,
+                "ganancias": ganancias,
+                "capital_productos": totalCosto,
+                "consumos_propios": totalConsumosCosto,
+                "observaciones": obs
+            ])
+
+            if var cfg = try? await fb.getDocument("config_caja_negocio") {
+                if cfg.isEmpty { cfg = ["balance": 0.0, "ganancias_acumuladas": 0.0, "balance_al_cierre": 0.0] }
+                var balance = (cfg["balance"] as? Double ?? 0) + inicial + totalCosto - diferencia
+                var ganAcum = (cfg["ganancias_acumuladas"] as? Double ?? 0) + ganancias
+                cfg["balance"] = balance
+                cfg["ganancias_acumuladas"] = ganAcum
+                cfg["balance_al_cierre"] = balance
+                cfg["updated_at"] = now
+                try await fb.setDocument("config_caja_negocio", data: cfg)
+            }
+
+            await MainActor.run { refresh() }
+        } catch { print("Error cierre: \(error)") }
     }
 }
