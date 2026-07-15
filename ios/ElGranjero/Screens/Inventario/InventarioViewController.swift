@@ -29,10 +29,11 @@ class InventarioViewController: UIViewController, UITableViewDataSource, UITable
         filterStack.axis = .horizontal; filterStack.spacing = 8
         filterStack.translatesAutoresizingMaskIntoConstraints = false; filterScroll.addSubview(filterStack)
         NSLayoutConstraint.activate([
-            filterStack.topAnchor.constraint(equalTo: filterScroll.topAnchor, constant: 2),
-            filterStack.leadingAnchor.constraint(equalTo: filterScroll.leadingAnchor, constant: 12),
-            filterStack.trailingAnchor.constraint(equalTo: filterScroll.trailingAnchor, constant: -12),
-            filterStack.bottomAnchor.constraint(equalTo: filterScroll.bottomAnchor, constant: -2),
+            filterStack.topAnchor.constraint(equalTo: filterScroll.contentLayoutGuide.topAnchor, constant: 2),
+            filterStack.leadingAnchor.constraint(equalTo: filterScroll.contentLayoutGuide.leadingAnchor, constant: 12),
+            filterStack.trailingAnchor.constraint(equalTo: filterScroll.contentLayoutGuide.trailingAnchor, constant: -12),
+            filterStack.bottomAnchor.constraint(equalTo: filterScroll.contentLayoutGuide.bottomAnchor, constant: -2),
+            filterStack.heightAnchor.constraint(equalTo: filterScroll.frameLayoutGuide.heightAnchor, constant: -4),
         ])
 
         tableView.dataSource = self; tableView.delegate = self
@@ -46,7 +47,7 @@ class InventarioViewController: UIViewController, UITableViewDataSource, UITable
             searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor), searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             filterScroll.topAnchor.constraint(equalTo: searchBar.bottomAnchor),
             filterScroll.leadingAnchor.constraint(equalTo: view.leadingAnchor), filterScroll.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            filterScroll.heightAnchor.constraint(equalToConstant: 42),
+            filterScroll.heightAnchor.constraint(equalToConstant: 46),
             tableView.topAnchor.constraint(equalTo: filterScroll.bottomAnchor, constant: 4),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor), tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
