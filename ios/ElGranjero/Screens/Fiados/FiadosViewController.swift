@@ -9,7 +9,7 @@ class FiadosViewController: UIViewController, UITableViewDataSource, UITableView
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor(red: 0.92, green: 0.90, blue: 0.86, alpha: 1); title = "Fiados"
+        view.backgroundColor = .systemBackground; title = "Fiados"
 
         segment.selectedSegmentIndex = 0; segment.addTarget(self, action: #selector(segmentChanged), for: .valueChanged); segment.translatesAutoresizingMaskIntoConstraints = false; view.addSubview(segment)
         tableView.dataSource = self; tableView.delegate = self; tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell"); tableView.backgroundColor = .clear; tableView.translatesAutoresizingMaskIntoConstraints = false; view.addSubview(tableView)

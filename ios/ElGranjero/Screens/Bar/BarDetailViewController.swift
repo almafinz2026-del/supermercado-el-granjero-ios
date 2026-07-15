@@ -24,7 +24,7 @@ class BarDetailViewController: UIViewController, UITableViewDataSource, UITableV
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor(red: 0.92, green: 0.90, blue: 0.86, alpha: 1)
+        view.backgroundColor = .systemBackground
         title = cuenta["cliente"] as? String ?? cuenta["mesa"] as? String ?? "Detalle Cuenta"
 
         setupUI()
@@ -42,7 +42,7 @@ class BarDetailViewController: UIViewController, UITableViewDataSource, UITableV
 
         // Bottom Card
         let bottomCard = UIView()
-        bottomCard.backgroundColor = .white
+        bottomCard.backgroundColor = .secondarySystemGroupedBackground
         bottomCard.layer.cornerRadius = 16
         bottomCard.layer.shadowColor = UIColor.black.cgColor
         bottomCard.layer.shadowOpacity = 0.05

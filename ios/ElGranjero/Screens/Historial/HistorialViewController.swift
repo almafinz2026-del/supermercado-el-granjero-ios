@@ -9,7 +9,7 @@ class HistorialViewController: UIViewController, UITableViewDataSource, UITableV
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor(red: 0.92, green: 0.90, blue: 0.86, alpha: 1); title = "Historial"
+        view.backgroundColor = .systemBackground; title = "Historial"
 
         segControl.selectedSegmentIndex = 0; segControl.addTarget(self, action: #selector(loadData), for: .valueChanged); segControl.translatesAutoresizingMaskIntoConstraints = false; view.addSubview(segControl)
         tableView.dataSource = self; tableView.delegate = self; tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell"); tableView.backgroundColor = .clear; tableView.translatesAutoresizingMaskIntoConstraints = false; view.addSubview(tableView)

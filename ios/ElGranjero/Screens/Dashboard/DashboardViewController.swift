@@ -19,7 +19,7 @@ class DashboardViewController: UIViewController, UICollectionViewDataSource, UIC
         KPI(title: "Stock Bajo", icon: "exclamationmark.triangle"),
     ]
 
-    private var tint: UIColor { UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.3, green: 0.7, blue: 0.5, alpha: 1) : UIColor(red: 0.1, green: 0.3, blue: 0.24, alpha: 1) } }
+    private var tint: UIColor { UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.35, green: 0.75, blue: 0.55, alpha: 1) : UIColor(red: 0.08, green: 0.32, blue: 0.25, alpha: 1) } }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -66,7 +66,7 @@ class DashboardViewController: UIViewController, UICollectionViewDataSource, UIC
         if let img = FirebaseService.decodificarFoto(foto) {
             avatarView.image = img
         } else {
-            avatarView.image = HomeViewController.avatarImage(letter: String((SessionManager.shared.username ?? "U").prefix(1)).uppercased(), size: 48)
+            avatarView.image = HomeViewController.personAvatar(size: 48)
         }
         greetCard.addSubview(avatarView)
         let nameLbl = UILabel(); nameLbl.text = SessionManager.shared.username ?? "Usuario"

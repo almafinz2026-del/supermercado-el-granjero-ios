@@ -12,7 +12,7 @@ class CajaViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor(red: 0.92, green: 0.90, blue: 0.86, alpha: 1)
+        view.backgroundColor = .systemBackground
         title = "Caja"
 
         stackView.axis = .vertical; stackView.spacing = 16; stackView.translatesAutoresizingMaskIntoConstraints = false
@@ -23,7 +23,7 @@ class CajaViewController: UIViewController {
             stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24)
         ])
 
-        let card = UIView(); card.backgroundColor = .white; card.layer.cornerRadius = 16; card.translatesAutoresizingMaskIntoConstraints = false
+        let card = UIView(); card.backgroundColor = .secondarySystemGroupedBackground; card.layer.cornerRadius = 16; card.translatesAutoresizingMaskIntoConstraints = false
         stackView.addArrangedSubview(card)
 
         let innerStack = UIStackView(); innerStack.axis = .vertical; innerStack.spacing = 12; innerStack.translatesAutoresizingMaskIntoConstraints = false

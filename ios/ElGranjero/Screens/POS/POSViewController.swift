@@ -17,7 +17,7 @@ class POSViewController: UIViewController, UITableViewDataSource, UITableViewDel
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor(red: 0.92, green: 0.90, blue: 0.86, alpha: 1)
+        view.backgroundColor = .systemBackground
         title = "Ventas Super"
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "barcode.viewfinder"), style: .plain, target: self, action: #selector(openScanner))
@@ -28,7 +28,7 @@ class POSViewController: UIViewController, UITableViewDataSource, UITableViewDel
         productosTable.backgroundColor = .clear; productosTable.separatorStyle = .none; productosTable.rowHeight = 60
         productosTable.translatesAutoresizingMaskIntoConstraints = false; view.addSubview(productosTable)
 
-        cartView.backgroundColor = .white; cartView.layer.cornerRadius = 16
+        cartView.backgroundColor = .secondarySystemGroupedBackground; cartView.layer.cornerRadius = 16
         cartView.layer.shadowColor = UIColor.black.cgColor; cartView.layer.shadowOpacity = 0.05; cartView.layer.shadowRadius = 8; cartView.layer.shadowOffset = CGSize(width: 0, height: -2)
         cartView.translatesAutoresizingMaskIntoConstraints = false; view.addSubview(cartView)
         
@@ -187,7 +187,7 @@ class POSProductCell: UITableViewCell {
         backgroundColor = .clear
         selectionStyle = .none
         
-        cardView.backgroundColor = .white
+        cardView.backgroundColor = .secondarySystemGroupedBackground
         cardView.layer.cornerRadius = 10
         cardView.layer.shadowColor = UIColor.black.cgColor
         cardView.layer.shadowOpacity = 0.03

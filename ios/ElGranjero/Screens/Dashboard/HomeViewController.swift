@@ -14,7 +14,7 @@ class HomeViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor(red: 0.92, green: 0.90, blue: 0.86, alpha: 1)
+        view.backgroundColor = .systemBackground
         _filteredItems = Self.allModules.enumerated().compactMap { (i, item) in
             session.tienePermiso(Self.modulePerms[i]) ? item : nil
         }
@@ -47,7 +47,7 @@ class HomeViewController: UIViewController {
         let tap = UITapGestureRecognizer(target: self, action: #selector(hideSidebar))
         dimmingView.addGestureRecognizer(tap)
 
-        sidebarView.backgroundColor = UIColor(red: 0.12, green: 0.28, blue: 0.22, alpha: 1)
+        sidebarView.backgroundColor = UIColor(red: 0.04, green: 0.18, blue: 0.14, alpha: 1)
         sidebarView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(sidebarView)
 
@@ -62,41 +62,40 @@ class HomeViewController: UIViewController {
 
     // MARK: - Sidebar
     private func setupSidebar() {
-        // User avatar
-        let avatarSize: CGFloat = 52
+        let avatarSize: CGFloat = 56
         let avatarView = UIImageView()
         avatarView.contentMode = .scaleAspectFill
         avatarView.layer.cornerRadius = avatarSize / 2
         avatarView.clipsToBounds = true
+        avatarView.layer.borderWidth = 2
+        avatarView.layer.borderColor = UIColor.white.withAlphaComponent(0.25).cgColor
         avatarView.translatesAutoresizingMaskIntoConstraints = false
         let foto = session.foto
         if let img = FirebaseService.decodificarFoto(foto) {
             avatarView.image = img
         } else {
-            let initial = String((session.username ?? "E").prefix(1)).uppercased()
-            avatarView.image = Self.avatarImage(letter: initial, size: avatarSize)
+            avatarView.image = Self.personAvatar(size: avatarSize)
         }
         sidebarView.addSubview(avatarView)
         NSLayoutConstraint.activate([
-            avatarView.topAnchor.constraint(equalTo: sidebarView.safeAreaLayoutGuide.topAnchor, constant: 16),
+            avatarView.topAnchor.constraint(equalTo: sidebarView.safeAreaLayoutGuide.topAnchor, constant: 20),
             avatarView.centerXAnchor.constraint(equalTo: sidebarView.centerXAnchor),
             avatarView.widthAnchor.constraint(equalToConstant: avatarSize),
             avatarView.heightAnchor.constraint(equalToConstant: avatarSize)
         ])
 
-        // User info
         let nameLabel = UILabel()
         nameLabel.text = session.username ?? "El Granjero"
-        nameLabel.font = UIFont.boldSystemFont(ofSize: 13)
+        nameLabel.font = .systemFont(ofSize: 14, weight: .semibold)
         nameLabel.textColor = .white
         nameLabel.textAlignment = .center
         nameLabel.translatesAutoresizingMaskIntoConstraints = false
         sidebarView.addSubview(nameLabel)
         NSLayoutConstraint.activate([
-            nameLabel.topAnchor.constraint(equalTo: avatarView.bottomAnchor, constant: 6),
+            nameLabel.topAnchor.constraint(equalTo: avatarView.bottomAnchor, constant: 8),
             nameLabel.centerXAnchor.constraint(equalTo: sidebarView.centerXAnchor),
-            nameLabel.leadingAnchor.constraint(equalTo: sidebarView.leadingAnchor, constant: 8),
-            nameLabel.trailingAnchor.constraint(equalTo: sidebarView.trailingAnchor, constant: -8)
+            nameLabel.leadingAnchor.constraint(equalTo: sidebarView.leadingAnchor, constant: 12),
+            nameLabel.trailingAnchor.constraint(equalTo: sidebarView.trailingAnchor, constant: -12)
         ])
 
         let roleLabel = UILabel()
@@ -104,30 +103,29 @@ class HomeViewController: UIViewController {
         let isUserAdmin = session.username?.lowercased() == "admin" || session.username?.lowercased() == "nelson" || rolName == "jefe" || rolName == "admin" || rolName == "administrador"
         if isUserAdmin {
             roleLabel.text = "Acceso Total"
-            roleLabel.textColor = UIColor(red: 1.0, green: 0.84, blue: 0.2, alpha: 1.0)
-            roleLabel.font = UIFont.boldSystemFont(ofSize: 10)
+            roleLabel.textColor = UIColor(red: 0.95, green: 0.78, blue: 0.22, alpha: 1)
+            roleLabel.font = .systemFont(ofSize: 10, weight: .bold)
         } else {
             roleLabel.text = "\(session.permCount) permisos"
-            roleLabel.textColor = UIColor.white.withAlphaComponent(0.6)
-            roleLabel.font = UIFont.systemFont(ofSize: 10)
+            roleLabel.textColor = UIColor.white.withAlphaComponent(0.55)
+            roleLabel.font = .systemFont(ofSize: 10)
         }
         roleLabel.textAlignment = .center
         roleLabel.translatesAutoresizingMaskIntoConstraints = false
         sidebarView.addSubview(roleLabel)
         NSLayoutConstraint.activate([
-            roleLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 2),
+            roleLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 3),
             roleLabel.centerXAnchor.constraint(equalTo: sidebarView.centerXAnchor)
         ])
 
-        // Separator
         let sep = UIView()
-        sep.backgroundColor = UIColor.white.withAlphaComponent(0.15)
+        sep.backgroundColor = UIColor.white.withAlphaComponent(0.12)
         sep.translatesAutoresizingMaskIntoConstraints = false
         sidebarView.addSubview(sep)
         NSLayoutConstraint.activate([
-            sep.topAnchor.constraint(equalTo: roleLabel.bottomAnchor, constant: 10),
-            sep.leadingAnchor.constraint(equalTo: sidebarView.leadingAnchor, constant: 16),
-            sep.trailingAnchor.constraint(equalTo: sidebarView.trailingAnchor, constant: -16),
+            sep.topAnchor.constraint(equalTo: roleLabel.bottomAnchor, constant: 14),
+            sep.leadingAnchor.constraint(equalTo: sidebarView.leadingAnchor, constant: 20),
+            sep.trailingAnchor.constraint(equalTo: sidebarView.trailingAnchor, constant: -20),
             sep.heightAnchor.constraint(equalToConstant: 1)
         ])
 
@@ -164,45 +162,54 @@ class HomeViewController: UIViewController {
             if filtered.isEmpty { continue }
 
             let sectionLabel = UILabel()
-            sectionLabel.text = "   \(group.title.uppercased())"
-            sectionLabel.font = UIFont.boldSystemFont(ofSize: 10)
-            sectionLabel.textColor = UIColor.white.withAlphaComponent(0.5)
+            sectionLabel.text = "  \(group.title.uppercased())"
+            sectionLabel.font = .systemFont(ofSize: 10, weight: .bold)
+            sectionLabel.textColor = UIColor.white.withAlphaComponent(0.4)
             sectionLabel.translatesAutoresizingMaskIntoConstraints = false
-            sectionLabel.heightAnchor.constraint(equalToConstant: 26).isActive = true
+            sectionLabel.heightAnchor.constraint(equalToConstant: 28).isActive = true
             stackView.addArrangedSubview(sectionLabel)
 
             for i in filtered {
                 let module = Self.allModules[i]
                 let btn = UIButton(type: .system)
                 btn.contentHorizontalAlignment = .left
+                btn.contentEdgeInsets = UIEdgeInsets(top: 0, left: 18, bottom: 0, right: 0)
                 btn.setTitle("  \(module.title)", for: .normal)
                 btn.setImage(UIImage(systemName: module.icon), for: .normal)
-                btn.tintColor = currentIndex == itemIdx ? UIColor(red: 1, green: 0.84, blue: 0.2, alpha: 1) : UIColor.white.withAlphaComponent(0.8)
-                btn.titleLabel?.font = UIFont.systemFont(ofSize: 13)
+                let active = currentIndex == itemIdx
+                btn.tintColor = active ? UIColor(red: 0.95, green: 0.78, blue: 0.22, alpha: 1) : UIColor.white.withAlphaComponent(0.7)
+                btn.setTitleColor(active ? .white : UIColor.white.withAlphaComponent(0.8), for: .normal)
+                btn.titleLabel?.font = .systemFont(ofSize: 13.5, weight: active ? .semibold : .regular)
                 btn.tag = itemIdx
                 btn.addTarget(self, action: #selector(moduleSelected(_:)), for: .touchUpInside)
-                btn.heightAnchor.constraint(equalToConstant: 40).isActive = true
-                btn.backgroundColor = currentIndex == itemIdx ? UIColor.white.withAlphaComponent(0.1) : .clear
-                btn.layer.cornerRadius = 6
+                btn.heightAnchor.constraint(equalToConstant: 42).isActive = true
+                btn.backgroundColor = active ? UIColor.white.withAlphaComponent(0.12) : .clear
+                btn.layer.cornerRadius = 8
+                btn.layer.masksToBounds = true
                 stackView.addArrangedSubview(btn)
                 itemIdx += 1
             }
         }
 
-        // Logout button pinned at bottom
+        // Logout button
         let logoutButton = UIButton(type: .system)
-        logoutButton.setTitle("Cerrar Sesión", for: .normal)
+        logoutButton.setTitle("  Cerrar Sesión", for: .normal)
         logoutButton.setImage(UIImage(systemName: "rectangle.portrait.and.arrow.right"), for: .normal)
-        logoutButton.tintColor = UIColor(red: 1, green: 0.4, blue: 0.4, alpha: 1)
-        logoutButton.titleLabel?.font = UIFont.systemFont(ofSize: 13)
+        logoutButton.tintColor = UIColor(red: 0.95, green: 0.35, blue: 0.35, alpha: 1)
+        logoutButton.setTitleColor(UIColor.white.withAlphaComponent(0.7), for: .normal)
+        logoutButton.titleLabel?.font = .systemFont(ofSize: 13)
         logoutButton.contentHorizontalAlignment = .left
+        logoutButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 18, bottom: 0, right: 0)
         logoutButton.translatesAutoresizingMaskIntoConstraints = false
+        logoutButton.backgroundColor = UIColor.white.withAlphaComponent(0.06)
+        logoutButton.layer.cornerRadius = 8
+        logoutButton.layer.masksToBounds = true
         sidebarView.addSubview(logoutButton)
         NSLayoutConstraint.activate([
-            logoutButton.leadingAnchor.constraint(equalTo: sidebarView.leadingAnchor, constant: 12),
-            logoutButton.trailingAnchor.constraint(equalTo: sidebarView.trailingAnchor, constant: -12),
+            logoutButton.leadingAnchor.constraint(equalTo: sidebarView.leadingAnchor, constant: 10),
+            logoutButton.trailingAnchor.constraint(equalTo: sidebarView.trailingAnchor, constant: -10),
             logoutButton.bottomAnchor.constraint(equalTo: sidebarView.safeAreaLayoutGuide.bottomAnchor, constant: -8),
-            logoutButton.heightAnchor.constraint(equalToConstant: 40)
+            logoutButton.heightAnchor.constraint(equalToConstant: 44)
         ])
         logoutButton.addTarget(self, action: #selector(logoutTapped), for: .touchUpInside)
     }
@@ -238,8 +245,10 @@ class HomeViewController: UIViewController {
             for case let btn as UIButton in stackView.arrangedSubviews {
                 let idx = btn.tag
                 let isActive = idx == index
-                btn.tintColor = isActive ? UIColor(red: 1, green: 0.84, blue: 0.2, alpha: 1) : UIColor.white.withAlphaComponent(0.8)
-                btn.backgroundColor = isActive ? UIColor.white.withAlphaComponent(0.1) : .clear
+                btn.tintColor = isActive ? UIColor(red: 0.95, green: 0.78, blue: 0.22, alpha: 1) : UIColor.white.withAlphaComponent(0.7)
+                btn.setTitleColor(isActive ? .white : UIColor.white.withAlphaComponent(0.8), for: .normal)
+                btn.titleLabel?.font = .systemFont(ofSize: 13.5, weight: isActive ? .semibold : .regular)
+                btn.backgroundColor = isActive ? UIColor.white.withAlphaComponent(0.12) : .clear
             }
         }
         
@@ -340,21 +349,21 @@ class HomeViewController: UIViewController {
         ("Análisis", [15, 16, 17])
     ]
 
-    static func avatarImage(letter: String, size: CGFloat) -> UIImage {
+    static func personAvatar(size: CGFloat) -> UIImage {
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: size, height: size))
         return renderer.image { ctx in
             let rect = CGRect(origin: .zero, size: CGSize(width: size, height: size))
             let path = UIBezierPath(roundedRect: rect, cornerRadius: size / 2)
             path.addClip()
-            UIColor.white.withAlphaComponent(0.2).setFill()
+            UIColor.white.withAlphaComponent(0.15).setFill()
             path.fill()
-            let attrs: [NSAttributedString.Key: Any] = [
-                .font: UIFont.boldSystemFont(ofSize: size * 0.45),
-                .foregroundColor: UIColor.white
-            ]
-            let textSize = letter.size(withAttributes: attrs)
-            let textRect = CGRect(x: (size - textSize.width) / 2, y: (size - textSize.height) / 2, width: textSize.width, height: textSize.height)
-            letter.draw(in: textRect, withAttributes: attrs)
+            let config = UIImage.SymbolConfiguration(pointSize: size * 0.5, weight: .medium)
+            if let icon = UIImage(systemName: "person.fill", withConfiguration: config)?
+                .withTintColor(UIColor.white.withAlphaComponent(0.6), renderingMode: .alwaysOriginal) {
+                let iconSize = icon.size
+                let iconRect = CGRect(x: (size - iconSize.width) / 2, y: (size - iconSize.height) / 2, width: iconSize.width, height: iconSize.height)
+                icon.draw(in: iconRect)
+            }
         }
     }
 }

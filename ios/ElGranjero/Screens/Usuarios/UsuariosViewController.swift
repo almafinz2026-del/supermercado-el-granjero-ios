@@ -253,24 +253,15 @@ class UsuariosViewController: UIViewController, UITableViewDataSource, UITableVi
             if let decoded = FirebaseService.decodificarFoto(foto) {
                 decoded.draw(in: rect)
             } else {
-                let colors: [UIColor] = [.systemGreen, .systemBlue, .systemOrange, .systemPurple, .systemTeal, .systemPink]
-                let color = colors[abs(name.hash) % colors.count]
-                color.setFill()
+                UIColor.systemGray4.setFill()
                 path.fill()
-
-                let initial = String(name.prefix(1)).uppercased()
-                let attrs: [NSAttributedString.Key: Any] = [
-                    .font: UIFont.boldSystemFont(ofSize: size * 0.45),
-                    .foregroundColor: UIColor.white
-                ]
-                let textSize = initial.size(withAttributes: attrs)
-                let textRect = CGRect(
-                    x: (size - textSize.width) / 2,
-                    y: (size - textSize.height) / 2,
-                    width: textSize.width,
-                    height: textSize.height
-                )
-                initial.draw(in: textRect, withAttributes: attrs)
+                let config = UIImage.SymbolConfiguration(pointSize: size * 0.5, weight: .medium)
+                if let icon = UIImage(systemName: "person.fill", withConfiguration: config)?
+                    .withTintColor(.white, renderingMode: .alwaysOriginal) {
+                    let iconSize = icon.size
+                    let iconRect = CGRect(x: (size - iconSize.width) / 2, y: (size - iconSize.height) / 2 + 1, width: iconSize.width, height: iconSize.height)
+                    icon.draw(in: iconRect)
+                }
             }
         }
     }

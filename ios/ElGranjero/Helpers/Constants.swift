@@ -1,47 +1,29 @@
 import UIKit
 
 struct AppColors {
-    static let primary = UIColor(red: 0.1, green: 0.3, blue: 0.24, alpha: 1)
-    static let primaryLight = UIColor(red: 0.18, green: 0.48, blue: 0.37, alpha: 1)
-    static let background = UIColor(red: 0.92, green: 0.90, blue: 0.86, alpha: 1)
-    static let cardBackground = UIColor.white
-    static let textDark = UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1)
-    static let textMuted = UIColor.gray
+    static let primary = UIColor(red: 0.07, green: 0.30, blue: 0.22, alpha: 1)
+    static let primaryDark = UIColor(red: 0.04, green: 0.20, blue: 0.15, alpha: 1)
+    static let sidebarBg = UIColor(red: 0.05, green: 0.22, blue: 0.18, alpha: 1)
+    static let accent = UIColor(red: 0.95, green: 0.78, blue: 0.22, alpha: 1)
+    static let accentLight = UIColor(red: 0.98, green: 0.90, blue: 0.55, alpha: 1)
+    static let success = UIColor(red: 0.18, green: 0.60, blue: 0.35, alpha: 1)
     static let danger = UIColor.systemRed
-    static let warning = UIColor.systemOrange
-    static let success = UIColor(red: 0.18, green: 0.48, blue: 0.37, alpha: 1)
+    static let cardBg = UIColor.secondarySystemGroupedBackground
+    static let background = UIColor.systemBackground
+    static let textPrimary = UIColor.label
+    static let textSecondary = UIColor.secondaryLabel
+    static let textTertiary = UIColor.tertiaryLabel
+    static let shadowColor = UIColor.black.cgColor
+    static let shadowOpacity: Float = 0.06
+    static let cardCornerRadius: CGFloat = 14
+    static let buttonCornerRadius: CGFloat = 12
 }
 
 struct AppFonts {
-    static func regular(_ size: CGFloat) -> UIFont { UIFont.systemFont(ofSize: size) }
-    static func bold(_ size: CGFloat) -> UIFont { UIFont.boldSystemFont(ofSize: size) }
-    static func medium(_ size: CGFloat) -> UIFont { UIFont.systemFont(ofSize: size, weight: .medium) }
-}
-
-struct DateFormatters {
-    static let shortDate: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        return f
-    }()
-    
-    static let fullDate: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        return f
-    }()
-    
-    static let displayDate: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "d MMM yyyy"
-        f.locale = Locale(identifier: "es_CO")
-        return f
-    }()
-    
-    static let displayDateTime: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "d MMM yyyy HH:mm"
-        f.locale = Locale(identifier: "es_CO")
-        return f
-    }()
+    static func title() -> UIFont { .systemFont(ofSize: 28, weight: .bold) }
+    static func heading() -> UIFont { .systemFont(ofSize: 17, weight: .semibold) }
+    static func body() -> UIFont { .systemFont(ofSize: 14, weight: .regular) }
+    static func caption() -> UIFont { .systemFont(ofSize: 12, weight: .regular) }
+    static func small() -> UIFont { .systemFont(ofSize: 10, weight: .medium) }
+    static func value() -> UIFont { .systemFont(ofSize: 22, weight: .bold) }
 }
