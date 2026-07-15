@@ -3,8 +3,10 @@ import UIKit
 class ReportesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
 
     private let tableView = UITableView()
-    private let segControl = UISegmentedControl(items: ["Ventas", "Ganancias", "Productos"])
+    private let segControl = UISegmentedControl(items: ["Ventas", "Ganancias", "Productos", "Consumos"])
     private var reportData: [[String: Any]] = []
+    private var consumos: [[String: Any]] = []
+    private var resumenConsumos = ""
     private var titleText = ""
     private let fb = FirebaseService.shared
 
@@ -41,6 +43,26 @@ class ReportesViewController: UIViewController, UITableViewDataSource, UITableVi
                         let cost = items.compactMap { $0["precio_compra"] as? Double }.reduce(0, +)
                         var r = v; r["ganancia"] = total - cost; return r
                     }
+                case 3:
+                    titleText = "Consumos"
+                    consumos = try await fb.getList("autoconsumos")
+                    let prods = try await fb.getList("productos")
+                    for i in 0..<consumos.count {
+                        let c = consumos[i]
+                        if let pid = c["producto_id"] as? Int {
+                            if let prod = prods.first(where: { ($0["id"] as? Int) == pid }) {
+                                consumos[i]["precio_compra"] = prod["precio_compra"]
+                            }
+                        }
+                    }
+                    consumos.sort { ($0["fecha"] as? String ?? "") > ($1["fecha"] as? String ?? "") }
+                    let totalUnids = consumos.reduce(0) { $0 + ($1["cantidad"] as? Int ?? 0) }
+                    let costoTotal = consumos.reduce(0.0) { sum, c in
+                        let cant = Double(c["cantidad"] as? Int ?? 0)
+                        let pc = c["precio_compra"] as? Double ?? 0
+                        return sum + (cant * pc)
+                    }
+                    resumenConsumos = "Unidades: \(totalUnids) | Costo: \(FirebaseService.formatMoney(costoTotal)) | Registros: \(consumos.count)"
                 default:
                     titleText = "Top Productos"
                     let productos = try await fb.getList("productos")
@@ -51,7 +73,13 @@ class ReportesViewController: UIViewController, UITableViewDataSource, UITableVi
         }
     }
 
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { reportData.count }
+    func numberOfSections(in tableView: UITableView) -> Int { 1 }
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        segControl.selectedSegmentIndex == 3 ? resumenConsumos : nil
+    }
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        segControl.selectedSegmentIndex == 3 ? consumos.count : reportData.count
+    }
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
         cell.textLabel?.font = UIFont.systemFont(ofSize: 13); cell.backgroundColor = .white
@@ -64,6 +92,15 @@ class ReportesViewController: UIViewController, UITableViewDataSource, UITableVi
             let v = reportData[indexPath.row]; let ganancia = FirebaseService.formatMoney(v["ganancia"] as? Double ?? 0)
             let cliente = v["cliente"] as? String ?? "Mostrador"
             cell.textLabel?.text = "\(cliente) - Ganancia: \(ganancia)"
+        case 3:
+            let c = consumos[indexPath.row]
+            let prod = c["producto_nombre"] as? String ?? "?"
+            let cant = c["cantidad"] as? Int ?? 0
+            let fecha = (c["fecha"] as? String ?? "").prefix(10)
+            let pc = c["precio_compra"] as? Double ?? 0
+            let costo = Double(cant) * pc
+            cell.textLabel?.text = "\(prod) — \(cant) unids. (\(fecha))"
+            cell.detailTextLabel?.text = "Costo: \(FirebaseService.formatMoney(costo))"
         default:
             let p = reportData[indexPath.row]; let name = p["nombre"] as? String ?? "?"
             let stock = p["stock_actual"] as? Int ?? 0
