@@ -196,7 +196,12 @@ class DashboardViewController: UIViewController, UICollectionViewDataSource, UIC
         let ventasMes = mes.compactMap { $0["total"] as? Double }.reduce(0, +)
         let ganancias = hoy.reduce(0.0) { sum, v in
             let items = v["items"] as? [[String: Any]] ?? []
-            return sum + (v["total"] as? Double ?? 0) - items.compactMap { $0["precio_compra"] as? Double }.reduce(0, +)
+            let cost = items.reduce(0.0) { s, item in
+                let qty = Double(item["cantidad"] as? Int ?? 1)
+                let c = item["precio_compra"] as? Double ?? 0
+                return s + (c * qty)
+            }
+            return sum + (v["total"] as? Double ?? 0) - cost
         }
         let deudores = clientes.filter { ($0["saldo_pendiente"] as? Double ?? 0) > 0 }.count
         let valInv = productos.compactMap { p -> Double? in
