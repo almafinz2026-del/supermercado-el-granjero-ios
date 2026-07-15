@@ -96,6 +96,22 @@ class FirebaseService {
     }
     
     // MARK: - Helpers
+    static func decodificarFoto(_ foto: String?) -> UIImage? {
+        guard let foto = foto, !foto.isEmpty else { return nil }
+        if foto.hasPrefix("data:") {
+            guard let commaIdx = foto.firstIndex(of: ",") else { return nil }
+            let b64 = String(foto[foto.index(after: commaIdx)...])
+            guard let data = Data(base64Encoded: b64) else { return nil }
+            return UIImage(data: data)
+        }
+        if foto.hasPrefix("http") {
+            guard let url = URL(string: foto) else { return nil }
+            if let data = try? Data(contentsOf: url) { return UIImage(data: data) }
+            return nil
+        }
+        return nil
+    }
+
     static func formatMoney(_ amount: Double) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal

@@ -322,6 +322,9 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
         if rememberSwitch.isOn {
             defaults.set(userTextField.text, forKey: "username")
             defaults.set(passTextField.text, forKey: "password")
+            if let foto = SessionManager.shared.foto, !foto.isEmpty {
+                defaults.set(foto, forKey: "photo")
+            }
         } else {
             defaults.removeObject(forKey: "username")
             defaults.removeObject(forKey: "password")

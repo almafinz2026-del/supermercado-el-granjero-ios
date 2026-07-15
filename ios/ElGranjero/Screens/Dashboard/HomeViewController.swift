@@ -62,22 +62,26 @@ class HomeViewController: UIViewController {
 
     // MARK: - Sidebar
     private func setupSidebar() {
-        // Logo text
-        let logoLabel = UILabel()
-        logoLabel.text = "EG"
-        logoLabel.font = UIFont.boldSystemFont(ofSize: 22)
-        logoLabel.textColor = UIColor(red: 1, green: 0.84, blue: 0.2, alpha: 1)
-        logoLabel.textAlignment = .center
-        logoLabel.backgroundColor = UIColor.white.withAlphaComponent(0.15)
-        logoLabel.layer.cornerRadius = 20
-        logoLabel.clipsToBounds = true
-        logoLabel.translatesAutoresizingMaskIntoConstraints = false
-        sidebarView.addSubview(logoLabel)
+        // User avatar
+        let avatarSize: CGFloat = 52
+        let avatarView = UIImageView()
+        avatarView.contentMode = .scaleAspectFill
+        avatarView.layer.cornerRadius = avatarSize / 2
+        avatarView.clipsToBounds = true
+        avatarView.translatesAutoresizingMaskIntoConstraints = false
+        let foto = session.foto
+        if let img = FirebaseService.decodificarFoto(foto) {
+            avatarView.image = img
+        } else {
+            let initial = String((session.username ?? "E").prefix(1)).uppercased()
+            avatarView.image = Self.avatarImage(letter: initial, size: avatarSize)
+        }
+        sidebarView.addSubview(avatarView)
         NSLayoutConstraint.activate([
-            logoLabel.topAnchor.constraint(equalTo: sidebarView.safeAreaLayoutGuide.topAnchor, constant: 16),
-            logoLabel.centerXAnchor.constraint(equalTo: sidebarView.centerXAnchor),
-            logoLabel.widthAnchor.constraint(equalToConstant: 40),
-            logoLabel.heightAnchor.constraint(equalToConstant: 40)
+            avatarView.topAnchor.constraint(equalTo: sidebarView.safeAreaLayoutGuide.topAnchor, constant: 16),
+            avatarView.centerXAnchor.constraint(equalTo: sidebarView.centerXAnchor),
+            avatarView.widthAnchor.constraint(equalToConstant: avatarSize),
+            avatarView.heightAnchor.constraint(equalToConstant: avatarSize)
         ])
 
         // User info
@@ -89,7 +93,7 @@ class HomeViewController: UIViewController {
         nameLabel.translatesAutoresizingMaskIntoConstraints = false
         sidebarView.addSubview(nameLabel)
         NSLayoutConstraint.activate([
-            nameLabel.topAnchor.constraint(equalTo: logoLabel.bottomAnchor, constant: 6),
+            nameLabel.topAnchor.constraint(equalTo: avatarView.bottomAnchor, constant: 6),
             nameLabel.centerXAnchor.constraint(equalTo: sidebarView.centerXAnchor),
             nameLabel.leadingAnchor.constraint(equalTo: sidebarView.leadingAnchor, constant: 8),
             nameLabel.trailingAnchor.constraint(equalTo: sidebarView.trailingAnchor, constant: -8)
@@ -335,4 +339,22 @@ class HomeViewController: UIViewController {
         ("Gestión", [12, 13, 14]),
         ("Análisis", [15, 16, 17])
     ]
+
+    static func avatarImage(letter: String, size: CGFloat) -> UIImage {
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: size, height: size))
+        return renderer.image { ctx in
+            let rect = CGRect(origin: .zero, size: CGSize(width: size, height: size))
+            let path = UIBezierPath(roundedRect: rect, cornerRadius: size / 2)
+            path.addClip()
+            UIColor.white.withAlphaComponent(0.2).setFill()
+            path.fill()
+            let attrs: [NSAttributedString.Key: Any] = [
+                .font: UIFont.boldSystemFont(ofSize: size * 0.45),
+                .foregroundColor: UIColor.white
+            ]
+            let textSize = letter.size(withAttributes: attrs)
+            let textRect = CGRect(x: (size - textSize.width) / 2, y: (size - textSize.height) / 2, width: textSize.width, height: textSize.height)
+            letter.draw(in: textRect, withAttributes: attrs)
+        }
+    }
 }

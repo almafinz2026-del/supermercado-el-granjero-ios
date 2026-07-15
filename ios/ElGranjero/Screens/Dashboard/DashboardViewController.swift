@@ -57,6 +57,18 @@ class DashboardViewController: UIViewController, UICollectionViewDataSource, UIC
         // Greeting card
         let greetCard = cardView()
         contentView.addSubview(greetCard)
+        let avatarView = UIImageView()
+        avatarView.contentMode = .scaleAspectFill
+        avatarView.layer.cornerRadius = 24
+        avatarView.clipsToBounds = true
+        avatarView.translatesAutoresizingMaskIntoConstraints = false
+        let foto = SessionManager.shared.foto
+        if let img = FirebaseService.decodificarFoto(foto) {
+            avatarView.image = img
+        } else {
+            avatarView.image = HomeViewController.avatarImage(letter: String((SessionManager.shared.username ?? "U").prefix(1)).uppercased(), size: 48)
+        }
+        greetCard.addSubview(avatarView)
         let nameLbl = UILabel(); nameLbl.text = SessionManager.shared.username ?? "Usuario"
         nameLbl.font = .systemFont(ofSize: 26, weight: .bold); nameLbl.textColor = tint
         nameLbl.translatesAutoresizingMaskIntoConstraints = false; greetCard.addSubview(nameLbl)
@@ -68,8 +80,12 @@ class DashboardViewController: UIViewController, UICollectionViewDataSource, UIC
             greetCard.topAnchor.constraint(equalTo: contentView.topAnchor, constant: pad),
             greetCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: pad),
             greetCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -pad),
+            avatarView.topAnchor.constraint(equalTo: greetCard.topAnchor, constant: 18),
+            avatarView.leadingAnchor.constraint(equalTo: greetCard.leadingAnchor, constant: 18),
+            avatarView.widthAnchor.constraint(equalToConstant: 48),
+            avatarView.heightAnchor.constraint(equalToConstant: 48),
             nameLbl.topAnchor.constraint(equalTo: greetCard.topAnchor, constant: 18),
-            nameLbl.leadingAnchor.constraint(equalTo: greetCard.leadingAnchor, constant: 18),
+            nameLbl.leadingAnchor.constraint(equalTo: avatarView.trailingAnchor, constant: 12),
             nameLbl.trailingAnchor.constraint(equalTo: greetCard.trailingAnchor, constant: -18),
             dateLbl.topAnchor.constraint(equalTo: nameLbl.bottomAnchor, constant: 4),
             dateLbl.leadingAnchor.constraint(equalTo: nameLbl.leadingAnchor),
