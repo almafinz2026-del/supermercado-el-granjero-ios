@@ -4,10 +4,10 @@ target 'ElGranjero' do
   use_frameworks!
   use_modular_headers!
 
-  # Firebase
-  pod 'FirebaseCore'
-  pod 'FirebaseAuth'
-  pod 'FirebaseFirestore'
+  # Firebase (pinned ~> 10.x for Xcode 15 compat; v11+ requires Swift 6 / Xcode 16)
+  pod 'FirebaseCore', '~> 10.0'
+  pod 'FirebaseAuth', '~> 10.0'
+  pod 'FirebaseFirestore', '~> 10.0'
 
   post_install do |installer|
     installer.pods_project.targets.each do |target|
