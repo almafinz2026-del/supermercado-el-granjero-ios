@@ -7,19 +7,7 @@
   },
   "ios": {
     "path": "ios",
-    "scheme": "Runner",
+    "scheme": "ElGranjero",
     "signing": false
-  },
-  "mobai": {
-    "url": "http://localhost:8686",
-    "device_id": ""
-  },
-  "flutter": {
-    "watch": {
-      "dirs": ["lib"],
-      "patterns": [".dart"],
-      "ignore": [".g.dart", ".freezed.dart"],
-      "debounce": 100
-    }
   }
 }
