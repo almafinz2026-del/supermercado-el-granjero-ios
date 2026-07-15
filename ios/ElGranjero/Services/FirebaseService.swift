@@ -6,17 +6,25 @@ import FirebaseFirestore
 class FirebaseService {
     static let shared = FirebaseService()
     
-    let db = Firestore.firestore()
-    private let datosRef: CollectionReference
+    private var _db: Firestore?
+    private var _datosRef: CollectionReference?
     
-    private init() {
-        datosRef = db.collection("datos")
-    }
+    private init() {}
     
     func configure() {
         if FirebaseApp.allApps?.isEmpty ?? true {
             FirebaseApp.configure()
         }
+        _db = Firestore.firestore()
+        _datosRef = _db!.collection("datos")
+    }
+    
+    var db: Firestore {
+        return _db!
+    }
+    
+    private var datosRef: CollectionReference {
+        return _datosRef!
     }
     
     // MARK: - Auth
