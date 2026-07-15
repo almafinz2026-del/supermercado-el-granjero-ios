@@ -47,9 +47,20 @@ class HomeViewController: UIViewController {
         let tap = UITapGestureRecognizer(target: self, action: #selector(hideSidebar))
         dimmingView.addGestureRecognizer(tap)
 
-        sidebarView.backgroundColor = UIColor(red: 0.04, green: 0.18, blue: 0.14, alpha: 1)
+        sidebarView.backgroundColor = UIColor(red: 0.04, green: 0.18, blue: 0.14, alpha: 0.65)
         sidebarView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(sidebarView)
+
+        let blurEffect = UIBlurEffect(style: .systemMaterialDark)
+        let blurView = UIVisualEffectView(effect: blurEffect)
+        blurView.translatesAutoresizingMaskIntoConstraints = false
+        sidebarView.addSubview(blurView)
+        NSLayoutConstraint.activate([
+            blurView.topAnchor.constraint(equalTo: sidebarView.topAnchor),
+            blurView.bottomAnchor.constraint(equalTo: sidebarView.bottomAnchor),
+            blurView.leadingAnchor.constraint(equalTo: sidebarView.leadingAnchor),
+            blurView.trailingAnchor.constraint(equalTo: sidebarView.trailingAnchor)
+        ])
 
         sidebarLeadingConstraint = sidebarView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -sidebarWidth)
         NSLayoutConstraint.activate([
@@ -173,7 +184,7 @@ class HomeViewController: UIViewController {
                 let module = Self.allModules[i]
                 let btn = UIButton(type: .system)
                 btn.contentHorizontalAlignment = .left
-                btn.contentEdgeInsets = UIEdgeInsets(top: 0, left: 18, bottom: 0, right: 0)
+                btn.contentEdgeInsets = UIEdgeInsets(top: 0, left: 24, bottom: 0, right: 0)
                 btn.setTitle("  \(module.title)", for: .normal)
                 btn.setImage(UIImage(systemName: module.icon), for: .normal)
                 let active = currentIndex == itemIdx
@@ -186,6 +197,23 @@ class HomeViewController: UIViewController {
                 btn.backgroundColor = active ? UIColor.white.withAlphaComponent(0.12) : .clear
                 btn.layer.cornerRadius = 8
                 btn.layer.masksToBounds = true
+
+                // Add premium left-border indicator
+                let indicator = UIView()
+                indicator.backgroundColor = UIColor(red: 0.95, green: 0.78, blue: 0.22, alpha: 1)
+                indicator.layer.cornerRadius = 2
+                indicator.tag = 99
+                indicator.alpha = active ? 1.0 : 0.0
+                indicator.translatesAutoresizingMaskIntoConstraints = false
+                btn.addSubview(indicator)
+
+                NSLayoutConstraint.activate([
+                    indicator.leadingAnchor.constraint(equalTo: btn.leadingAnchor, constant: 8),
+                    indicator.centerYAnchor.constraint(equalTo: btn.centerYAnchor),
+                    indicator.widthAnchor.constraint(equalToConstant: 4),
+                    indicator.heightAnchor.constraint(equalToConstant: 18)
+                ])
+
                 stackView.addArrangedSubview(btn)
                 itemIdx += 1
             }
@@ -245,10 +273,9 @@ class HomeViewController: UIViewController {
             for case let btn as UIButton in stackView.arrangedSubviews {
                 let idx = btn.tag
                 let isActive = idx == index
-                btn.tintColor = isActive ? UIColor(red: 0.95, green: 0.78, blue: 0.22, alpha: 1) : UIColor.white.withAlphaComponent(0.7)
-                btn.setTitleColor(isActive ? .white : UIColor.white.withAlphaComponent(0.8), for: .normal)
-                btn.titleLabel?.font = .systemFont(ofSize: 13.5, weight: isActive ? .semibold : .regular)
+                btn.tintColor = isActive ? UIColor(red: 1, green: 0.84, blue: 0.2, alpha: 1) : UIColor.white.withAlphaComponent(0.8)
                 btn.backgroundColor = isActive ? UIColor.white.withAlphaComponent(0.12) : .clear
+                btn.viewWithTag(99)?.alpha = isActive ? 1.0 : 0.0
             }
         }
         
@@ -269,7 +296,24 @@ class HomeViewController: UIViewController {
         UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut, animations: {
             self.dimmingView.alpha = 1
             self.view.layoutIfNeeded()
-        }, completion: nil)
+        }, completion: { [weak self] _ in
+            self?.animateSidebarItems()
+        })
+    }
+
+    private func animateSidebarItems() {
+        guard let scroll = sidebarView.subviews.compactMap({ $0 as? UIScrollView }).first,
+              let stack = scroll.subviews.compactMap({ $0 as? UIStackView }).first else { return }
+        
+        let buttons = stack.arrangedSubviews.compactMap { $0 as? UIButton }
+        for (index, btn) in buttons.enumerated() {
+            btn.alpha = 0
+            btn.transform = CGAffineTransform(translationX: -16, y: 0)
+            UIView.animate(withDuration: 0.25, delay: Double(index) * 0.02, options: .curveEaseOut, animations: {
+                btn.alpha = 1
+                btn.transform = .identity
+            }, completion: nil)
+        }
     }
 
     @objc private func hideSidebar() {

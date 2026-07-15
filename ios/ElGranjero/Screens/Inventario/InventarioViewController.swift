@@ -67,7 +67,7 @@ class InventarioViewController: UIViewController, UITableViewDataSource, UITable
 
     private func buildCategories() {
         var cats = Set<String>()
-        for p in productos { if let c = p["categoria"] as? String, !c.isEmpty { cats.insert(c) } }
+        for p in productos { if let c = p["categoria_nombre"] as? String, !c.isEmpty { cats.insert(c) } }
         categorias = ["Todos"] + Array(cats).sorted()
         filterStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         for cat in categorias {
@@ -91,7 +91,7 @@ class InventarioViewController: UIViewController, UITableViewDataSource, UITable
     private func applyFilters() {
         let text = searchBar.text?.trimmingCharacters(in: .whitespaces) ?? ""
         filtered = productos.filter { p in
-            let matchCat = selectedCategory == nil || (p["categoria"] as? String ?? "") == selectedCategory
+            let matchCat = selectedCategory == nil || (p["categoria_nombre"] as? String ?? "") == selectedCategory
             let matchText = text.isEmpty || (p["nombre"] as? String ?? "").localizedCaseInsensitiveContains(text) || (p["codigo"] as? String ?? "").localizedCaseInsensitiveContains(text)
             return matchCat && matchText
         }
@@ -135,12 +135,12 @@ class InventarioViewController: UIViewController, UITableViewDataSource, UITable
         alert.addTextField { tf in tf.placeholder = "Stock actual"; tf.text = producto?["stock_actual"] != nil ? "\(producto!["stock_actual"]!)" : ""; tf.keyboardType = .numberPad }
         alert.addTextField { tf in tf.placeholder = "Stock mínimo"; tf.text = producto?["stock_minimo"] != nil ? "\(producto!["stock_minimo"]!)" : ""; tf.keyboardType = .numberPad }
         alert.addTextField { tf in tf.placeholder = "Marca"; tf.text = producto?["marca"] as? String }
-        alert.addTextField { tf in tf.placeholder = "Categoría"; tf.text = producto?["categoria"] as? String }
+        alert.addTextField { tf in tf.placeholder = "Categoría"; tf.text = producto?["categoria_nombre"] as? String }
         alert.addAction(UIAlertAction(title: "Guardar", style: .default) { [weak self] _ in
             guard let self = self else { return }
             let f = alert.textFields ?? []
             guard let name = f[0].text?.trimmingCharacters(in: .whitespaces), !name.isEmpty else { return }
-            var data: [String: Any] = ["nombre": name, "codigo": f[1].text ?? "", "precio_compra": Double(f[2].text?.replacingOccurrences(of: ",", with: ".") ?? "") ?? 0, "precio_venta": Double(f[3].text?.replacingOccurrences(of: ",", with: ".") ?? "") ?? 0, "stock_actual": Int(f[4].text ?? "") ?? 0, "stock_minimo": Int(f[5].text ?? "") ?? 0, "marca": f[6].text ?? "", "categoria": f[7].text ?? ""]
+            var data: [String: Any] = ["nombre": name, "codigo": f[1].text ?? "", "precio_compra": Double(f[2].text?.replacingOccurrences(of: ",", with: ".") ?? "") ?? 0, "precio_venta": Double(f[3].text?.replacingOccurrences(of: ",", with: ".") ?? "") ?? 0, "stock_actual": Int(f[4].text ?? "") ?? 0, "stock_minimo": Int(f[5].text ?? "") ?? 0, "marca": f[6].text ?? "", "categoria_nombre": f[7].text ?? ""]
             if let id = producto?["id"] as? Int { data["id"] = id }
             Task { do {
                 if producto == nil { data["id"] = FirebaseService.nextId(in: self.productos); try await self.fb.addToList("productos", item: data) }
@@ -210,7 +210,7 @@ class InventarioProductCell: UITableViewCell {
     }
 
     func configure(with p: [String: Any]) {
-        let name = p["nombre"] as? String ?? ""; let brand = p["marca"] as? String ?? ""; let cat = p["categoria"] as? String ?? ""
+        let name = p["nombre"] as? String ?? ""; let brand = p["marca"] as? String ?? ""; let cat = p["categoria_nombre"] as? String ?? ""
         let stock = p["stock_actual"] as? Int ?? 0; let minStock = p["stock_minimo"] as? Int ?? 0; let price = p["precio_venta"] as? Double ?? 0
         nameLabel.text = name; priceLabel.text = FirebaseService.formatMoney(price)
         let details = [brand, cat].filter { !$0.isEmpty }.joined(separator: " • ")
