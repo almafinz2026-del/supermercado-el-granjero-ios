@@ -14,6 +14,9 @@ class HomeViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = UIColor(red: 0.92, green: 0.90, blue: 0.86, alpha: 1)
+        _filteredItems = Self.allModules.enumerated().compactMap { (i, item) in
+            session.tienePermiso(Self.modulePerms[i]) ? item : nil
+        }
         setupNavigationBar()
         setupContainer()
         setupDrawer()
@@ -84,7 +87,7 @@ class HomeViewController: UIViewController {
         ModuleItem(title: "Fiados", icon: "creditcard", vc: FiadosViewController()),
         ModuleItem(title: "Inventario", icon: "shippingbox", vc: InventarioViewController()),
         ModuleItem(title: "Compras", icon: "bag", vc: ComprasViewController()),
-        ModuleItem(title: "Compras Prog.", icon: "calendar", vc: UIViewController()), // placeholder
+        ModuleItem(title: "Compras Prog.", icon: "calendar", vc: UIViewController()),
         ModuleItem(title: "Categorías", icon: "folder", vc: CategoriasViewController()),
         ModuleItem(title: "Distribuciones", icon: "wallet.pass", vc: DistribucionesViewController()),
         ModuleItem(title: "Clientes", icon: "person.2", vc: ClientesViewController()),
@@ -95,10 +98,14 @@ class HomeViewController: UIViewController {
         ModuleItem(title: "Configuración", icon: "gearshape", vc: ConfiguracionViewController()),
     ]
     
+    private var _filteredItems: [ModuleItem]?
     var filteredItems: [ModuleItem] {
-        Self.allModules.enumerated().compactMap { (i, item) in
+        if let items = _filteredItems { return items }
+        let items = Self.allModules.enumerated().compactMap { (i, item) in
             session.tienePermiso(Self.modulePerms[i]) ? item : nil
         }
+        _filteredItems = items
+        return items
     }
     
     static let moduleGroups: [(title: String, indices: [Int])] = [
