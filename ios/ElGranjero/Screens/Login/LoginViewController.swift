@@ -386,7 +386,7 @@ class LoginViewController: UIViewController {
                 
                 // Step 5: Load permissions
                 let roles = try? await fb.getList("roles")
-                SessionManager.shared.setUser(match, roles: roles)
+                SessionManager.shared.setUser(match, roles: roles ?? [])
                 self.saveCredentials()
                 
                 // Step 6: Navigate to home
