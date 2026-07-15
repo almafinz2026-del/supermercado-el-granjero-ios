@@ -43,6 +43,7 @@
 		10000099 /* BarDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000099 /* BarDetailViewController.swift */; };
 		10000045 /* FacturacionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000045 /* FacturacionViewController.swift */; };
 		10000046 /* ComprasProgramadasViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000046 /* ComprasProgramadasViewController.swift */; };
+		10000047 /* BarcodeScannerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000047 /* BarcodeScannerViewController.swift */; };
 		10000050 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 20000050 /* Assets.xcassets */; };
 		10000051 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 20000051 /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
@@ -84,6 +85,7 @@
 		20000099 /* BarDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarDetailViewController.swift; sourceTree = "<group>"; };
 		20000045 /* FacturacionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FacturacionViewController.swift; sourceTree = "<group>"; };
 		20000046 /* ComprasProgramadasViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComprasProgramadasViewController.swift; sourceTree = "<group>"; };
+		20000047 /* BarcodeScannerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarcodeScannerViewController.swift; sourceTree = "<group>"; };
 		20000050 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		20000051 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = GoogleService-Info.plist; sourceTree = "<group>"; };
 		20000052 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -173,6 +175,7 @@
 				40000024 /* Bar */,
 				40000025 /* Facturacion */,
 				40000026 /* ComprasProgramadas */,
+				40000027 /* Scanner */,
 			);
 			path = Screens;
 			sourceTree = "<group>";
@@ -204,6 +207,7 @@
 		40000024 /* Bar */ = { isa = PBXGroup; children = (20000044 /* BarViewController.swift */, 20000099 /* BarDetailViewController.swift */,); path = Bar; sourceTree = "<group>"; };
 		40000025 /* Facturacion */ = { isa = PBXGroup; children = (20000045 /* FacturacionViewController.swift */,); path = Facturacion; sourceTree = "<group>"; };
 		40000026 /* ComprasProgramadas */ = { isa = PBXGroup; children = (20000046 /* ComprasProgramadasViewController.swift */,); path = ComprasProgramadas; sourceTree = "<group>"; };
+		40000027 /* Scanner */ = { isa = PBXGroup; children = (20000047 /* BarcodeScannerViewController.swift */,); path = Scanner; sourceTree = "<group>"; };
 		40000010 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -314,6 +318,7 @@
 				10000099 /* BarDetailViewController.swift in Sources */,
 				10000045 /* FacturacionViewController.swift in Sources */,
 				10000046 /* ComprasProgramadasViewController.swift in Sources */,
+				10000047 /* BarcodeScannerViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

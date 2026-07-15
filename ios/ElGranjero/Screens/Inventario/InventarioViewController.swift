@@ -13,8 +13,9 @@ class InventarioViewController: UIViewController, UITableViewDataSource, UITable
         view.backgroundColor = UIColor(red: 0.92, green: 0.90, blue: 0.86, alpha: 1)
         title = "Inventario"
 
+        let scanBtn = UIBarButtonItem(image: UIImage(systemName: "barcode.viewfinder"), style: .plain, target: self, action: #selector(scanBarcode))
         let addBtn = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addProducto))
-        navigationItem.rightBarButtonItem = addBtn
+        navigationItem.rightBarButtonItems = [addBtn, scanBtn]
 
         searchBar.delegate = self
         searchBar.placeholder = "Buscar producto..."
@@ -124,5 +125,19 @@ class InventarioViewController: UIViewController, UITableViewDataSource, UITable
             })
         }
         present(alert, animated: true)
+    }
+
+    @objc private func scanBarcode() {
+        let scanner = BarcodeScannerViewController { [weak self] code in
+            guard let self = self else { return }
+            if let p = self.productos.first(where: { ($0["codigo"] as? String) == code }) {
+                self.showForm(producto: p)
+            } else {
+                let a = UIAlertController(title: "Nuevo Producto", message: "Código: \(code)\n¿Crear producto?", preferredStyle: .alert)
+                a.addAction(UIAlertAction(title: "Crear", style: .default) { [weak self] _ in self?.showForm(producto: ["codigo": code]) })
+                a.addAction(UIAlertAction(title: "Cancelar", style: .cancel)); self.present(a, animated: true)
+            }
+        }
+        present(scanner, animated: true)
     }
 }
