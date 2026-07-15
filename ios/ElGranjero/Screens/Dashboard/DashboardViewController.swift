@@ -19,9 +19,11 @@ class DashboardViewController: UIViewController, UICollectionViewDataSource, UIC
         KPI(title: "Stock Bajo", icon: "exclamationmark.triangle"),
     ]
 
+    private var tint: UIColor { UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.3, green: 0.7, blue: 0.5, alpha: 1) : UIColor(red: 0.1, green: 0.3, blue: 0.24, alpha: 1) } }
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor(red: 0.95, green: 0.94, blue: 0.92, alpha: 1)
+        view.backgroundColor = .systemBackground
         setupUI()
         loadData()
     }
@@ -56,11 +58,11 @@ class DashboardViewController: UIViewController, UICollectionViewDataSource, UIC
         let greetCard = cardView()
         contentView.addSubview(greetCard)
         let nameLbl = UILabel(); nameLbl.text = SessionManager.shared.username ?? "Usuario"
-        nameLbl.font = .systemFont(ofSize: 26, weight: .bold); nameLbl.textColor = UIColor(red: 0.1, green: 0.3, blue: 0.24, alpha: 1)
+        nameLbl.font = .systemFont(ofSize: 26, weight: .bold); nameLbl.textColor = tint
         nameLbl.translatesAutoresizingMaskIntoConstraints = false; greetCard.addSubview(nameLbl)
         let dateLbl = UILabel()
         let df = DateFormatter(); df.dateFormat = "EEEE, d 'de' MMMM"; df.locale = Locale(identifier: "es_CO")
-        dateLbl.text = df.string(from: Date()).capitalized; dateLbl.font = .systemFont(ofSize: 13); dateLbl.textColor = .gray
+        dateLbl.text = df.string(from: Date()).capitalized; dateLbl.font = .systemFont(ofSize: 13); dateLbl.textColor = .secondaryLabel
         dateLbl.translatesAutoresizingMaskIntoConstraints = false; greetCard.addSubview(dateLbl)
         NSLayoutConstraint.activate([
             greetCard.topAnchor.constraint(equalTo: contentView.topAnchor, constant: pad),
@@ -97,7 +99,7 @@ class DashboardViewController: UIViewController, UICollectionViewDataSource, UIC
         let salesCard = cardView()
         contentView.addSubview(salesCard)
         salesCard.translatesAutoresizingMaskIntoConstraints = false
-        let salesHdr = sectionHeader("Últimas Ventas", color: UIColor(red: 0.1, green: 0.3, blue: 0.24, alpha: 1))
+        let salesHdr = sectionHeader("Últimas Ventas", color: tint)
         salesCard.addSubview(salesHdr)
         recentsStack = UIStackView(); recentsStack.axis = .vertical; recentsStack.spacing = 6
         recentsStack.translatesAutoresizingMaskIntoConstraints = false; salesCard.addSubview(recentsStack)
@@ -141,7 +143,7 @@ class DashboardViewController: UIViewController, UICollectionViewDataSource, UIC
     }
 
     private func cardView() -> UIView {
-        let v = UIView(); v.backgroundColor = .white; v.layer.cornerRadius = 14
+        let v = UIView(); v.backgroundColor = .secondarySystemGroupedBackground; v.layer.cornerRadius = 14
         v.layer.shadowColor = UIColor.black.cgColor; v.layer.shadowOpacity = 0.04
         v.layer.shadowRadius = 6; v.layer.shadowOffset = CGSize(width: 0, height: 2); return v
     }
@@ -194,7 +196,7 @@ class DashboardViewController: UIViewController, UICollectionViewDataSource, UIC
         // Recent sales
         recentsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         for v in hoy.prefix(5) {
-            let l = UILabel(); l.font = .systemFont(ofSize: 13); l.textColor = .darkGray
+            let l = UILabel(); l.font = .systemFont(ofSize: 13); l.textColor = .label
             l.text = "\(v["cliente"] as? String ?? "Mostrador") — \(FirebaseService.formatMoney(v["total"] as? Double ?? 0)) [\((v["fecha"] as? String ?? "").suffix(8))]"
             recentsStack.addArrangedSubview(l)
         }
@@ -210,35 +212,32 @@ class DashboardViewController: UIViewController, UICollectionViewDataSource, UIC
         if bajo.isEmpty { lowStockStack.addArrangedSubview(emptyLabel("Todo en orden")) }
     }
 
-    private func emptyLabel(_ text: String) -> UILabel { let l = UILabel(); l.text = text; l.font = .systemFont(ofSize: 13); l.textColor = .gray; return l }
+    private func emptyLabel(_ text: String) -> UILabel { let l = UILabel(); l.text = text; l.font = .systemFont(ofSize: 13); l.textColor = .secondaryLabel; return l }
 }
 
 // MARK: - KPI Cell
 class KPICell: UICollectionViewCell {
     private let icon = UIImageView(); private let title = UILabel(); private let value = UILabel()
+    private var accent: UIColor { UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.3, green: 0.7, blue: 0.5, alpha: 1) : UIColor(red: 0.1, green: 0.3, blue: 0.24, alpha: 1) } }
     override init(frame: CGRect) {
         super.init(frame: frame)
-        backgroundColor = .white; layer.cornerRadius = 12
+        backgroundColor = .secondarySystemGroupedBackground; layer.cornerRadius = 12
         layer.shadowColor = UIColor.black.cgColor; layer.shadowOpacity = 0.03; layer.shadowRadius = 4; layer.shadowOffset = CGSize(width: 0, height: 1)
         icon.contentMode = .scaleAspectFit; icon.translatesAutoresizingMaskIntoConstraints = false
-        title.font = .systemFont(ofSize: 11); title.textColor = .gray; title.translatesAutoresizingMaskIntoConstraints = false
-        value.font = .systemFont(ofSize: 20, weight: .bold); value.textColor = UIColor(red: 0.1, green: 0.3, blue: 0.24, alpha: 1)
+        title.font = .systemFont(ofSize: 11); title.textColor = .secondaryLabel; title.translatesAutoresizingMaskIntoConstraints = false
+        value.font = .systemFont(ofSize: 20, weight: .bold); value.textColor = accent
         value.adjustsFontSizeToFitWidth = true; value.minimumScaleFactor = 0.5; value.translatesAutoresizingMaskIntoConstraints = false
         [icon, title, value].forEach { contentView.addSubview($0) }
         NSLayoutConstraint.activate([
-            icon.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 14),
-            icon.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 14),
+            icon.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 14), icon.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 14),
             icon.widthAnchor.constraint(equalToConstant: 22), icon.heightAnchor.constraint(equalToConstant: 22),
-            title.topAnchor.constraint(equalTo: icon.bottomAnchor, constant: 8),
-            title.leadingAnchor.constraint(equalTo: icon.leadingAnchor),
-            value.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 2),
-            value.leadingAnchor.constraint(equalTo: title.leadingAnchor),
+            title.topAnchor.constraint(equalTo: icon.bottomAnchor, constant: 8), title.leadingAnchor.constraint(equalTo: icon.leadingAnchor),
+            value.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 2), value.leadingAnchor.constraint(equalTo: title.leadingAnchor),
             value.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -10),
         ])
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     func configure(title t: String, icon name: String, value v: String) {
-        title.text = t; value.text = v; icon.image = UIImage(systemName: name)
-        icon.tintColor = UIColor(red: 0.1, green: 0.3, blue: 0.24, alpha: 1)
+        title.text = t; value.text = v; icon.image = UIImage(systemName: name); icon.tintColor = accent
     }
 }
