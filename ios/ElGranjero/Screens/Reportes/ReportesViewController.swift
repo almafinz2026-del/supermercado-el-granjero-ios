@@ -40,7 +40,11 @@ class ReportesViewController: UIViewController, UITableViewDataSource, UITableVi
                     reportData = deHoy.map { v in
                         let total = v["total"] as? Double ?? 0
                         let items = v["items"] as? [[String: Any]] ?? []
-                        let cost = items.compactMap { $0["precio_compra"] as? Double }.reduce(0, +)
+                        let cost = items.reduce(0.0) { sum, it in
+                            let qty = Double(it["cantidad"] as? Int ?? 1)
+                            let pc = it["precio_compra"] as? Double ?? 0
+                            return sum + (qty * pc)
+                        }
                         var r = v; r["ganancia"] = total - cost; return r
                     }
                 case 3:
