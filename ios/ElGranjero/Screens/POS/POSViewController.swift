@@ -290,7 +290,7 @@ class POSCartCell: UITableViewCell {
             container.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4),
             container.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4),
             container.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
-            container.trailingAnchor.constraint(equalTo: container.trailingAnchor), // Just to prevent constraint errors
+            container.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
 
             qtyBadge.centerYAnchor.constraint(equalTo: container.centerYAnchor),
             qtyBadge.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 8),
