@@ -178,11 +178,11 @@ class HomeViewController: UIViewController {
             headerView.heightAnchor.constraint(equalToConstant: 160)
         ])
         
-        let iconView = UIImageView(image: UIImage(systemName: "store.fill"))
-        iconView.tintColor = UIColor(red: 0.1, green: 0.3, blue: 0.24, alpha: 1)
+        let iconView = UIImageView()
         iconView.backgroundColor = .white
-        iconView.layer.cornerRadius = 14
-        iconView.contentMode = .center
+        iconView.layer.cornerRadius = 26
+        iconView.clipsToBounds = true
+        iconView.contentMode = .scaleAspectFill
         iconView.translatesAutoresizingMaskIntoConstraints = false
         headerView.addSubview(iconView)
         NSLayoutConstraint.activate([
@@ -191,6 +191,20 @@ class HomeViewController: UIViewController {
             iconView.widthAnchor.constraint(equalToConstant: 52),
             iconView.heightAnchor.constraint(equalToConstant: 52)
         ])
+        if let fotoUrl = session.foto, let url = URL(string: fotoUrl) {
+            URLSession.shared.dataTask(with: url) { data, _, _ in
+                if let data = data, let image = UIImage(data: data) {
+                    DispatchQueue.main.async {
+                        iconView.image = image
+                        iconView.contentMode = .scaleAspectFill
+                    }
+                } else {
+                    self.setFallbackIcon(iconView)
+                }
+            }.resume()
+        } else {
+            setFallbackIcon(iconView)
+        }
         
         let nameLabel = UILabel()
         nameLabel.text = session.username ?? "El Granjero"
@@ -305,6 +319,12 @@ class HomeViewController: UIViewController {
     @objc private func moduleSelected(_ sender: UIButton) {
         showModule(at: sender.tag)
         toggleDrawer()
+    }
+    
+    private func setFallbackIcon(_ iconView: UIImageView) {
+        iconView.image = UIImage(systemName: "person.fill")
+        iconView.tintColor = UIColor(red: 0.1, green: 0.3, blue: 0.24, alpha: 1)
+        iconView.contentMode = .center
     }
     
     @objc private func logoutTapped() {
