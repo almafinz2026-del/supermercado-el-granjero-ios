@@ -102,6 +102,13 @@ jobs:
           restore-keys: |
             pods-${{ runner.os }}-
 
+      - name: Restore DerivedData cache
+        uses: actions/cache/restore@v4
+        id: cache-deriveddata
+        with:
+          path: DerivedData
+          key: deriveddata-${{ runner.os }}-${{ hashFiles(format('{0}/Podfile.lock', inputs.ios_path)) }}
+
       - name: Install certificate and provisioning profile
         if: inputs.use_signing
         env:
@@ -310,7 +317,7 @@ jobs:
         if: always()
         with:
           path: DerivedData
-          key: deriveddata-${{ github.run_id }}
+          key: deriveddata-${{ runner.os }}-${{ hashFiles(format('{0}/Podfile.lock', inputs.ios_path)) }}
 
       - name: Cleanup signing
         if: always() && inputs.use_signing
