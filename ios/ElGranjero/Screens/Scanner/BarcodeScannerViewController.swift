@@ -1,5 +1,6 @@
 import UIKit
 import AVFoundation
+import AudioToolbox
 
 class BarcodeScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
 
