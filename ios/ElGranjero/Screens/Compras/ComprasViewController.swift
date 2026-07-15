@@ -184,7 +184,7 @@ class CompraItemPickerVC: UIViewController, UITableViewDataSource, UITableViewDe
             let pv = Double(a.textFields?[2].text?.replacingOccurrences(of: ",", with: ".") ?? "") ?? 0
             self.selected.removeAll(where: { ($0["producto_id"] as? Int) == pid })
             self.selected.append(["producto_id": pid, "nombre": name, "cantidad": q, "precio_compra": pc, "precio_venta": pv])
-            self.tableView.reloadData(); self.navigationItem.rightBarButtonItem?.title = "Listo (\(self.selected.count))"
+            self.tableView.reloadData(); self.navigationItem.rightBarButtonItems?[0].title = "Listo (\(self.selected.count))"
         })
         a.addAction(UIAlertAction(title: "Cancelar", style: .cancel)); present(a, animated: true)
     }
