@@ -13,8 +13,9 @@ class InventarioViewController: UIViewController, UITableViewDataSource, UITable
         view.backgroundColor = UIColor(red: 0.92, green: 0.90, blue: 0.86, alpha: 1)
         title = "Inventario"
 
-        let addBtn = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addProducto))
-        navigationItem.rightBarButtonItem = addBtn
+        let s = UIBarButtonItem(image: UIImage(systemName: "barcode.viewfinder"), style: .plain, target: self, action: #selector(openScanner))
+        let a = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addProducto))
+        navigationItem.rightBarButtonItems = [a, s]
 
         searchBar.delegate = self
         searchBar.placeholder = "Buscar producto..."
@@ -124,5 +125,23 @@ class InventarioViewController: UIViewController, UITableViewDataSource, UITable
             })
         }
         present(alert, animated: true)
+    }
+
+    @objc private func openScanner() {
+        present(BarcodeScannerViewController { [weak self] code in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                if let p = self.productos.first(where: { ($0["codigo"] as? String) == code }) {
+                    self.showProductoForm(p)
+                } else {
+                    let a = UIAlertController(title: "Nuevo", message: "Código: \(code)\n¿Crear producto?", preferredStyle: .alert)
+                    a.addAction(UIAlertAction(title: "Crear", style: .default) { [weak self] _ in
+                        self?.showProductoForm(["codigo": code])
+                    })
+                    a.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
+                    self.present(a, animated: true)
+                }
+            }
+        }, animated: true)
     }
 }

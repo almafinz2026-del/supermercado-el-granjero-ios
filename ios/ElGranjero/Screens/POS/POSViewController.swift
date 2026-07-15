@@ -19,6 +19,7 @@ class POSViewController: UIViewController, UITableViewDataSource, UITableViewDel
         super.viewDidLoad()
         view.backgroundColor = UIColor(red: 0.92, green: 0.90, blue: 0.86, alpha: 1)
         title = "Ventas Super"
+        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "barcode.viewfinder"), style: .plain, target: self, action: #selector(openScanner))
 
         searchBar.delegate = self; searchBar.placeholder = "Buscar producto..."; searchBar.translatesAutoresizingMaskIntoConstraints = false; view.addSubview(searchBar)
 
@@ -142,5 +143,18 @@ class POSViewController: UIViewController, UITableViewDataSource, UITableViewDel
 
     private func showAlert(_ title: String, _ msg: String) {
         let a = UIAlertController(title: title, message: msg, preferredStyle: .alert); a.addAction(UIAlertAction(title: "OK", style: .default)); present(a, animated: true)
+    }
+
+    @objc private func openScanner() {
+        present(BarcodeScannerViewController { [weak self] code in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                if let p = self.productos.first(where: { ($0["codigo"] as? String) == code }) {
+                    if let idx = self.cart.firstIndex(where: { ($0.producto["id"] as? Int) == (p["id"] as? Int) }) { self.cart[idx].cantidad += 1 }
+                    else { self.cart.append((p, 1)) }
+                    self.updateTotal(); self.cartTable.reloadData()
+                }
+            }
+        }, animated: true)
     }
 }

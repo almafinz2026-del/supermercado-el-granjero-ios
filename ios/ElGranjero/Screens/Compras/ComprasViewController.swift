@@ -154,7 +154,9 @@ class CompraItemPickerVC: UIViewController, UITableViewDataSource, UITableViewDe
 
     override func viewDidLoad() {
         super.viewDidLoad(); title = "Productos"; view.backgroundColor = UIColor(red: 0.95, green: 0.94, blue: 0.92, alpha: 1)
-        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Listo (\(selected.count))", style: .done, target: self, action: #selector(done))
+        let d = UIBarButtonItem(title: "Listo (\(selected.count))", style: .done, target: self, action: #selector(done))
+        let s = UIBarButtonItem(image: UIImage(systemName: "barcode.viewfinder"), style: .plain, target: self, action: #selector(openScanner))
+        navigationItem.rightBarButtonItems = [d, s]
 
         searchBar.delegate = self; searchBar.placeholder = "Buscar..."; searchBar.translatesAutoresizingMaskIntoConstraints = false; view.addSubview(searchBar)
         tableView.dataSource = self; tableView.delegate = self; tableView.register(UITableViewCell.self, forCellReuseIdentifier: "ic"); tableView.backgroundColor = .clear; tableView.translatesAutoresizingMaskIntoConstraints = false; view.addSubview(tableView)
@@ -186,5 +188,21 @@ class CompraItemPickerVC: UIViewController, UITableViewDataSource, UITableViewDe
         })
         a.addAction(UIAlertAction(title: "Cancelar", style: .cancel)); present(a, animated: true)
     }
+    @objc private func openScanner() {
+        present(BarcodeScannerViewController { [weak self] code in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                if let p = self.allProds.first(where: { ($0["codigo"] as? String) == code }) {
+                    let pid = p["id"] as? Int ?? 0; let nm = p["nombre"] as? String ?? ""
+                    let c = p["precio_compra"] as? Double ?? 0; let v = p["precio_venta"] as? Double ?? 0
+                    self.selected.removeAll(where: { ($0["producto_id"] as? Int) == pid })
+                    self.selected.append(["producto_id": pid, "nombre": nm, "cantidad": 1, "precio_compra": c, "precio_venta": v])
+                    self.tableView.reloadData()
+                    self.navigationItem.rightBarButtonItems?[0].title = "Listo (\(self.selected.count))"
+                }
+            }
+        }, animated: true)
+    }
+
     @objc private func done() { dismiss(animated: true) { self.onDone(self.selected) } }
 }
