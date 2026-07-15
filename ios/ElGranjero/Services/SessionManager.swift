@@ -44,7 +44,15 @@ class SessionManager {
     }
     
     func tienePermiso(_ permiso: String) -> Bool {
-        if username == "admin" { return true }
+        if let userLower = username?.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) {
+            if userLower == "admin" || userLower == "nelson" {
+                return true
+            }
+        }
+        let roleLower = (currentUser?["rol"] as? String ?? "").lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        if roleLower == "jefe" || roleLower == "admin" || roleLower == "administrador" {
+            return true
+        }
         return permisos.contains(permiso)
     }
     
