@@ -9,12 +9,12 @@ class SessionManager {
     var permisos: [String] = []
     var permCount: Int = 0
     
-    // Permission constants - matching the 49 permission IDs from the Android app
+    // Permission constants - matching the 50 permission IDs (19 pantallas + 31 acciones)
     static let pantallas: [String] = [
         "dashboard", "caja", "ventas_super", "ventas_bar", "facturacion",
         "historial_ventas", "fiados", "productos", "compras", "compras_programadas",
         "categorias", "distribuciones", "clientes", "proveedores", "usuarios",
-        "reportes", "cierres", "configuracion"
+        "consumos", "reportes", "cierres", "configuracion"
     ]
     
     static let acciones: [String] = [

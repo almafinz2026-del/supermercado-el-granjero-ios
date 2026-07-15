@@ -351,7 +351,7 @@ class HomeViewController: UIViewController {
         "dashboard", "caja", "ventas_super", "ventas_bar", "facturacion",
         "historial_ventas", "fiados", "productos", "compras", "compras_programadas",
         "categorias", "distribuciones", "clientes", "proveedores", "usuarios",
-        "reportes", "cierres", "configuracion"
+        "consumos", "reportes", "cierres", "configuracion"
     ]
 
     static let allModules: [ModuleItem] = [
@@ -370,6 +370,7 @@ class HomeViewController: UIViewController {
         ModuleItem(title: "Clientes", icon: "person.2", vc: ClientesViewController()),
         ModuleItem(title: "Proveedores", icon: "building.2", vc: ProveedoresViewController()),
         ModuleItem(title: "Usuarios", icon: "shield", vc: UsuariosViewController()),
+        ModuleItem(title: "Consumos", icon: "person.badge.minus", vc: ConsumosViewController()),
         ModuleItem(title: "Reportes", icon: "chart.bar", vc: ReportesViewController()),
         ModuleItem(title: "Cierres", icon: "lock", vc: CierresViewController()),
         ModuleItem(title: "Configuración", icon: "gearshape", vc: ConfiguracionViewController()),
@@ -389,8 +390,8 @@ class HomeViewController: UIViewController {
         ("Principal", [0, 1]),
         ("Ventas", [2, 3, 4, 5, 6]),
         ("Inventario y Compras", [7, 8, 9, 10, 11]),
-        ("Gestión", [12, 13, 14]),
-        ("Análisis", [15, 16, 17])
+        ("Gestión", [12, 13, 14, 15]),
+        ("Análisis", [16, 17, 18])
     ]
 
     static func personAvatar(size: CGFloat) -> UIImage {
