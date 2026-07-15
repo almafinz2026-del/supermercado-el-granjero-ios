@@ -102,12 +102,22 @@ class InventarioViewController: UIViewController, UITableViewDataSource, UITable
 
     @objc private func addProducto() { showProductoForm(nil) }
 
+    private func nextCodigo() -> String {
+        var max = 0
+        for p in productos {
+            let c = (p["codigo"] as? String) ?? ""
+            let cleaned = c.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
+            if let n = Int(cleaned), n > max { max = n }
+        }
+        return "P" + String(format: "%04d", max + 1)
+    }
+
     private var tint: UIColor { UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.3, green: 0.7, blue: 0.5, alpha: 1) : UIColor(red: 0.1, green: 0.3, blue: 0.24, alpha: 1) } }
 
     private func showProductoForm(_ producto: [String: Any]?) {
         let alert = UIAlertController(title: producto == nil ? "Nuevo Producto" : "Editar Producto", message: nil, preferredStyle: .alert)
         alert.addTextField { tf in tf.placeholder = "Nombre"; tf.text = producto?["nombre"] as? String }
-        alert.addTextField { tf in tf.placeholder = "Código"; tf.text = producto?["codigo"] as? String; tf.autocapitalizationType = .none }
+        alert.addTextField { tf in tf.placeholder = "Código"; tf.text = producto?["codigo"] as? String ?? self.nextCodigo(); tf.autocapitalizationType = .none }
         alert.addTextField { tf in tf.placeholder = "Precio compra"; tf.text = producto?["precio_compra"] != nil ? "\(producto!["precio_compra"]!)" : ""; tf.keyboardType = .decimalPad }
         alert.addTextField { tf in tf.placeholder = "Precio venta"; tf.text = producto?["precio_venta"] != nil ? "\(producto!["precio_venta"]!)" : ""; tf.keyboardType = .decimalPad }
         alert.addTextField { tf in tf.placeholder = "Stock actual"; tf.text = producto?["stock_actual"] != nil ? "\(producto!["stock_actual"]!)" : ""; tf.keyboardType = .numberPad }
