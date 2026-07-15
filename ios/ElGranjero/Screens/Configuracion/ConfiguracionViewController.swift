@@ -38,11 +38,21 @@ class ConfiguracionViewController: UIViewController, UITableViewDataSource, UITa
     private func loadConfig() {
         Task {
             do {
-                let list = try await fb.getList("config")
+                let list = try await fb.getList("configuracion")
                 config = list.first ?? [:]
                 tableView.reloadData()
             } catch { print("Error: \(error)") }
         }
+    }
+
+    private func persistConfig() async throws {
+        var list = try await fb.getList("configuracion")
+        if list.isEmpty {
+            list = [config]
+        } else {
+            list[0] = config
+        }
+        try await fb.setList("configuracion", list: list)
     }
 
     func numberOfSections(in tableView: UITableView) -> Int { items.count }
@@ -76,7 +86,7 @@ class ConfiguracionViewController: UIViewController, UITableViewDataSource, UITa
             guard let self = self, let val = alert.textFields?.first?.text else { return }
             self.config[row.key] = val
             Task { do {
-                if let docId = self.config["id"] as? String { try await self.fb.updateDocument("config", id: docId, data: [row.key: val]) }
+                try await self.persistConfig()
                 self.tableView.reloadData()
             } catch { print("Error: \(error)") } }
         })
@@ -89,6 +99,6 @@ class ConfiguracionViewController: UIViewController, UITableViewDataSource, UITa
         guard section < items.count, rowIdx < items[section].rows.count else { return }
         let key = items[section].rows[rowIdx].key
         config[key] = sender.isOn
-        Task { do { if let docId = config["id"] as? String { try await fb.updateDocument("config", id: docId, data: [key: sender.isOn]) } } catch { print("Error: \(error)") } }
+        Task { do { try await persistConfig() } catch { print("Error: \(error)") } }
     }
 }
