@@ -49,15 +49,6 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: Restore DerivedData cache
-        uses: actions/cache/restore@v4
-        id: cache-deriveddata
-        with:
-          path: DerivedData
-          key: deriveddata-${{ github.run_id }}
-          restore-keys: |
-            deriveddata-
-
       - name: Detect project type
         id: detect
         run: |
