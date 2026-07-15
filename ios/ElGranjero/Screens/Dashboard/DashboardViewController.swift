@@ -1,34 +1,42 @@
 import UIKit
 
-class DashboardViewController: UIViewController {
+class DashboardViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
 
     private let scrollView = UIScrollView()
     private let contentView = UIView()
-    private var kpiValueLabels: [UILabel] = []
-    private var statCountLabels: [UILabel] = []
-    private var recentSalesStack: UIStackView!
+    private var kpiCollection: UICollectionView!
+    private var recentsStack: UIStackView!
     private var lowStockStack: UIStackView!
+    private var kpiValues: [String] = ["$0", "$0", "$0", "0", "$0", "0"]
+
+    private struct KPI { let title: String; let icon: String }
+    private let kpis: [KPI] = [
+        KPI(title: "Ventas Hoy", icon: "dollarsign.circle"),
+        KPI(title: "Ventas Mes", icon: "chart.line.uptrend.xyaxis"),
+        KPI(title: "Ganancias Hoy", icon: "arrow.up.forward"),
+        KPI(title: "Deudores", icon: "person.2"),
+        KPI(title: "Inventario", icon: "shippingbox"),
+        KPI(title: "Stock Bajo", icon: "exclamationmark.triangle"),
+    ]
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor(red: 0.92, green: 0.90, blue: 0.86, alpha: 1)
+        view.backgroundColor = UIColor(red: 0.95, green: 0.94, blue: 0.92, alpha: 1)
         setupUI()
         loadData()
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        loadData()
-    }
+    override func viewWillAppear(_ animated: Bool) { super.viewWillAppear(animated); loadData() }
 
     private func setupUI() {
+        scrollView.showsVerticalScrollIndicator = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(scrollView)
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
 
         contentView.translatesAutoresizingMaskIntoConstraints = false
@@ -38,359 +46,199 @@ class DashboardViewController: UIViewController {
             contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
             contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
             contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor)
+            contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
         ])
 
-        // Welcome card
-        let welcomeCard = createCard()
-        contentView.addSubview(welcomeCard)
-        welcomeCard.translatesAutoresizingMaskIntoConstraints = false
+        let pad: CGFloat = 14
+        let width = UIScreen.main.bounds.width - pad * 2
+
+        // Greeting card
+        let greetCard = cardView()
+        contentView.addSubview(greetCard)
+        let nameLbl = UILabel(); nameLbl.text = SessionManager.shared.username ?? "Usuario"
+        nameLbl.font = .systemFont(ofSize: 26, weight: .bold); nameLbl.textColor = UIColor(red: 0.1, green: 0.3, blue: 0.24, alpha: 1)
+        nameLbl.translatesAutoresizingMaskIntoConstraints = false; greetCard.addSubview(nameLbl)
+        let dateLbl = UILabel()
+        let df = DateFormatter(); df.dateFormat = "EEEE, d 'de' MMMM"; df.locale = Locale(identifier: "es_CO")
+        dateLbl.text = df.string(from: Date()).capitalized; dateLbl.font = .systemFont(ofSize: 13); dateLbl.textColor = .gray
+        dateLbl.translatesAutoresizingMaskIntoConstraints = false; greetCard.addSubview(dateLbl)
         NSLayoutConstraint.activate([
-            welcomeCard.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
-            welcomeCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            welcomeCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16)
+            greetCard.topAnchor.constraint(equalTo: contentView.topAnchor, constant: pad),
+            greetCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: pad),
+            greetCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -pad),
+            nameLbl.topAnchor.constraint(equalTo: greetCard.topAnchor, constant: 18),
+            nameLbl.leadingAnchor.constraint(equalTo: greetCard.leadingAnchor, constant: 18),
+            nameLbl.trailingAnchor.constraint(equalTo: greetCard.trailingAnchor, constant: -18),
+            dateLbl.topAnchor.constraint(equalTo: nameLbl.bottomAnchor, constant: 4),
+            dateLbl.leadingAnchor.constraint(equalTo: nameLbl.leadingAnchor),
+            dateLbl.bottomAnchor.constraint(equalTo: greetCard.bottomAnchor, constant: -18),
         ])
 
-        let greeting = UILabel()
-        greeting.text = "Bienvenido, \(SessionManager.shared.nombreCompleto ?? SessionManager.shared.username ?? "Usuario")"
-        greeting.font = UIFont.boldSystemFont(ofSize: 20)
-        greeting.translatesAutoresizingMaskIntoConstraints = false
-        welcomeCard.addSubview(greeting)
+        // KPI grid
+        let layout = UICollectionViewFlowLayout()
+        layout.minimumInteritemSpacing = 10; layout.minimumLineSpacing = 10
+        let itemW = (width - 10) / 2; layout.itemSize = CGSize(width: itemW, height: 95)
+        kpiCollection = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        kpiCollection.dataSource = self; kpiCollection.delegate = self
+        kpiCollection.register(KPICell.self, forCellWithReuseIdentifier: "kpi")
+        kpiCollection.backgroundColor = .clear; kpiCollection.isScrollEnabled = false
+        kpiCollection.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(kpiCollection)
 
-        let dateLabel = UILabel()
-        let df = DateFormatter()
-        df.dateFormat = "EEEE, d MMMM yyyy"
-        df.locale = Locale(identifier: "es_CO")
-        dateLabel.text = df.string(from: Date()).capitalized
-        dateLabel.font = UIFont.systemFont(ofSize: 13)
-        dateLabel.textColor = .gray
-        dateLabel.translatesAutoresizingMaskIntoConstraints = false
-        welcomeCard.addSubview(dateLabel)
-
+        let kpiH = ceil(CGFloat(kpis.count) / 2) * (95 + 10) - 10
         NSLayoutConstraint.activate([
-            greeting.topAnchor.constraint(equalTo: welcomeCard.topAnchor, constant: 16),
-            greeting.leadingAnchor.constraint(equalTo: welcomeCard.leadingAnchor, constant: 16),
-            greeting.trailingAnchor.constraint(equalTo: welcomeCard.trailingAnchor, constant: -16),
-            dateLabel.topAnchor.constraint(equalTo: greeting.bottomAnchor, constant: 4),
-            dateLabel.leadingAnchor.constraint(equalTo: greeting.leadingAnchor),
-            dateLabel.trailingAnchor.constraint(equalTo: greeting.trailingAnchor),
-            dateLabel.bottomAnchor.constraint(equalTo: welcomeCard.bottomAnchor, constant: -16)
+            kpiCollection.topAnchor.constraint(equalTo: greetCard.bottomAnchor, constant: 14),
+            kpiCollection.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: pad),
+            kpiCollection.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -pad),
+            kpiCollection.heightAnchor.constraint(equalToConstant: kpiH),
         ])
 
-        // KPI Cards
-        let kpiGrid = UIStackView()
-        kpiGrid.axis = .vertical
-        kpiGrid.spacing = 12
-        kpiGrid.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(kpiGrid)
-        NSLayoutConstraint.activate([
-            kpiGrid.topAnchor.constraint(equalTo: welcomeCard.bottomAnchor, constant: 16),
-            kpiGrid.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            kpiGrid.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16)
-        ])
-
-        let kpiData = [
-            ("Ventas Hoy", "dollarsign.circle"),
-            ("Ventas Mes", "chart.line.uptrend.xyaxis"),
-            ("Ganancias Hoy", "arrow.up.forward"),
-            ("Deudores Activos", "person.2"),
-            ("Valor Inventario", "shippingbox"),
-            ("Stock Bajo", "exclamationmark.triangle")
-        ]
-
-        for i in stride(from: 0, to: kpiData.count, by: 2) {
-            let row = UIStackView()
-            row.axis = .horizontal
-            row.spacing = 12
-            row.distribution = .fillEqually
-
-            for j in i..<min(i+2, kpiData.count) {
-                let (title, icon) = kpiData[j]
-                let card = createKPICard(title: title, icon: icon, index: j)
-                row.addArrangedSubview(card)
-            }
-            kpiGrid.addArrangedSubview(row)
-        }
-
-        // Quick Stats
-        let statsCard = createCard()
-        contentView.addSubview(statsCard)
-        statsCard.translatesAutoresizingMaskIntoConstraints = false
-
-        let statsTitle = UILabel()
-        statsTitle.text = "Resumen Rápido"
-        statsTitle.font = UIFont.boldSystemFont(ofSize: 16)
-        statsTitle.translatesAutoresizingMaskIntoConstraints = false
-        statsCard.addSubview(statsTitle)
-        NSLayoutConstraint.activate([
-            statsTitle.topAnchor.constraint(equalTo: statsCard.topAnchor, constant: 12),
-            statsTitle.leadingAnchor.constraint(equalTo: statsCard.leadingAnchor, constant: 16),
-            statsTitle.trailingAnchor.constraint(equalTo: statsCard.trailingAnchor, constant: -16)
-        ])
-
-        let statsStack = UIStackView()
-        statsStack.axis = .horizontal
-        statsStack.distribution = .fillEqually
-        statsStack.spacing = 8
-        statsStack.translatesAutoresizingMaskIntoConstraints = false
-        statsCard.addSubview(statsStack)
-        NSLayoutConstraint.activate([
-            statsStack.topAnchor.constraint(equalTo: statsTitle.bottomAnchor, constant: 12),
-            statsStack.leadingAnchor.constraint(equalTo: statsCard.leadingAnchor, constant: 16),
-            statsStack.trailingAnchor.constraint(equalTo: statsCard.trailingAnchor, constant: -16),
-            statsStack.bottomAnchor.constraint(equalTo: statsCard.bottomAnchor, constant: -12)
-        ])
-
-        let statItems = ["Productos", "Clientes", "Caja Abierta"]
-        for item in statItems {
-            let vStack = UIStackView()
-            vStack.axis = .vertical
-            vStack.alignment = .center
-            vStack.spacing = 4
-
-            let countLabel = UILabel()
-            countLabel.text = "0"
-            countLabel.font = UIFont.boldSystemFont(ofSize: 24)
-            countLabel.textColor = UIColor(red: 0.1, green: 0.3, blue: 0.24, alpha: 1)
-            statCountLabels.append(countLabel)
-
-            let nameLabel = UILabel()
-            nameLabel.text = item
-            nameLabel.font = UIFont.systemFont(ofSize: 11)
-            nameLabel.textColor = .gray
-
-            vStack.addArrangedSubview(countLabel)
-            vStack.addArrangedSubview(nameLabel)
-            statsStack.addArrangedSubview(vStack)
-        }
-
-        // Recent Sales
-        let salesCard = createCard()
+        // Recent sales
+        let salesCard = cardView()
         contentView.addSubview(salesCard)
         salesCard.translatesAutoresizingMaskIntoConstraints = false
+        let salesHdr = sectionHeader("Últimas Ventas", color: UIColor(red: 0.1, green: 0.3, blue: 0.24, alpha: 1))
+        salesCard.addSubview(salesHdr)
+        recentsStack = UIStackView(); recentsStack.axis = .vertical; recentsStack.spacing = 6
+        recentsStack.translatesAutoresizingMaskIntoConstraints = false; salesCard.addSubview(recentsStack)
+        NSLayoutConstraint.activate([
+            salesCard.topAnchor.constraint(equalTo: kpiCollection.bottomAnchor, constant: 14),
+            salesCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: pad),
+            salesCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -pad),
+            salesHdr.topAnchor.constraint(equalTo: salesCard.topAnchor, constant: 14),
+            salesHdr.leadingAnchor.constraint(equalTo: salesCard.leadingAnchor, constant: 16),
+            recentsStack.topAnchor.constraint(equalTo: salesHdr.bottomAnchor, constant: 10),
+            recentsStack.leadingAnchor.constraint(equalTo: salesCard.leadingAnchor, constant: 16),
+            recentsStack.trailingAnchor.constraint(equalTo: salesCard.trailingAnchor, constant: -16),
+            recentsStack.bottomAnchor.constraint(equalTo: salesCard.bottomAnchor, constant: -14),
+        ])
 
-        let salesTitle = UILabel()
-        salesTitle.text = "Últimas Ventas"
-        salesTitle.font = UIFont.boldSystemFont(ofSize: 16)
-        salesTitle.translatesAutoresizingMaskIntoConstraints = false
-        salesCard.addSubview(salesTitle)
-
-        recentSalesStack = UIStackView()
-        recentSalesStack.axis = .vertical
-        recentSalesStack.spacing = 8
-        recentSalesStack.translatesAutoresizingMaskIntoConstraints = false
-        salesCard.addSubview(recentSalesStack)
-
-        // Low Stock
-        let stockCard = createCard()
+        // Low stock
+        let stockCard = cardView()
         contentView.addSubview(stockCard)
         stockCard.translatesAutoresizingMaskIntoConstraints = false
-
-        let stockTitle = UILabel()
-        stockTitle.text = "Stock Bajo"
-        stockTitle.font = UIFont.boldSystemFont(ofSize: 16)
-        stockTitle.textColor = .systemRed
-        stockTitle.translatesAutoresizingMaskIntoConstraints = false
-        stockCard.addSubview(stockTitle)
-
-        lowStockStack = UIStackView()
-        lowStockStack.axis = .vertical
-        lowStockStack.spacing = 8
-        lowStockStack.translatesAutoresizingMaskIntoConstraints = false
-        stockCard.addSubview(lowStockStack)
-
+        let stockHdr = sectionHeader("Stock Bajo", color: .systemRed)
+        stockCard.addSubview(stockHdr)
+        lowStockStack = UIStackView(); lowStockStack.axis = .vertical; lowStockStack.spacing = 6
+        lowStockStack.translatesAutoresizingMaskIntoConstraints = false; stockCard.addSubview(lowStockStack)
         NSLayoutConstraint.activate([
-            salesTitle.topAnchor.constraint(equalTo: salesCard.topAnchor, constant: 12),
-            salesTitle.leadingAnchor.constraint(equalTo: salesCard.leadingAnchor, constant: 16),
-            salesTitle.trailingAnchor.constraint(equalTo: salesCard.trailingAnchor, constant: -16),
-            recentSalesStack.topAnchor.constraint(equalTo: salesTitle.bottomAnchor, constant: 12),
-            recentSalesStack.leadingAnchor.constraint(equalTo: salesCard.leadingAnchor, constant: 16),
-            recentSalesStack.trailingAnchor.constraint(equalTo: salesCard.trailingAnchor, constant: -16),
-            recentSalesStack.bottomAnchor.constraint(equalTo: salesCard.bottomAnchor, constant: -12),
-            stockTitle.topAnchor.constraint(equalTo: stockCard.topAnchor, constant: 12),
-            stockTitle.leadingAnchor.constraint(equalTo: stockCard.leadingAnchor, constant: 16),
-            stockTitle.trailingAnchor.constraint(equalTo: stockCard.trailingAnchor, constant: -16),
-            lowStockStack.topAnchor.constraint(equalTo: stockTitle.bottomAnchor, constant: 12),
+            stockCard.topAnchor.constraint(equalTo: salesCard.bottomAnchor, constant: 14),
+            stockCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: pad),
+            stockCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -pad),
+            stockHdr.topAnchor.constraint(equalTo: stockCard.topAnchor, constant: 14),
+            stockHdr.leadingAnchor.constraint(equalTo: stockCard.leadingAnchor, constant: 16),
+            lowStockStack.topAnchor.constraint(equalTo: stockHdr.bottomAnchor, constant: 10),
             lowStockStack.leadingAnchor.constraint(equalTo: stockCard.leadingAnchor, constant: 16),
             lowStockStack.trailingAnchor.constraint(equalTo: stockCard.trailingAnchor, constant: -16),
-            lowStockStack.bottomAnchor.constraint(equalTo: stockCard.bottomAnchor, constant: -12),
-            stockCard.topAnchor.constraint(equalTo: salesCard.bottomAnchor, constant: 16),
-            stockCard.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16),
-            salesCard.topAnchor.constraint(equalTo: kpiGrid.bottomAnchor, constant: 16),
-            salesCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            salesCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            stockCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            stockCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16)
+            lowStockStack.bottomAnchor.constraint(equalTo: stockCard.bottomAnchor, constant: -14),
+            stockCard.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -pad),
         ])
     }
 
+    private func sectionHeader(_ text: String, color: UIColor) -> UILabel {
+        let l = UILabel(); l.text = text; l.font = .systemFont(ofSize: 15, weight: .bold)
+        l.textColor = color; l.translatesAutoresizingMaskIntoConstraints = false; return l
+    }
+
+    private func cardView() -> UIView {
+        let v = UIView(); v.backgroundColor = .white; v.layer.cornerRadius = 14
+        v.layer.shadowColor = UIColor.black.cgColor; v.layer.shadowOpacity = 0.04
+        v.layer.shadowRadius = 6; v.layer.shadowOffset = CGSize(width: 0, height: 2); return v
+    }
+
+    // MARK: - Collection View
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int { kpis.count }
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "kpi", for: indexPath) as! KPICell
+        let k = kpis[indexPath.row]
+        cell.configure(title: k.title, icon: k.icon, value: indexPath.row < kpiValues.count ? kpiValues[indexPath.row] : "$0")
+        return cell
+    }
+
+    // MARK: - Data
     private func loadData() {
         Task {
             do {
                 let fb = FirebaseService.shared
-                async let productosData = fb.getList("productos")
-                async let ventasData = fb.getList("ventas")
-                async let clientesData = fb.getList("clientes")
+                async let prods = fb.getList("productos")
+                async let sales = fb.getList("ventas")
+                async let clients = fb.getList("clientes")
                 async let cajasData = fb.getList("cajas")
-
-                let (productos, ventas, clientes, cajas) = try await (productosData, ventasData, clientesData, cajasData)
-
-                await MainActor.run {
-                    updateDashboard(productos: productos, ventas: ventas, clientes: clientes, cajas: cajas)
-                }
-            } catch {
-                print("Dashboard load error: \(error)")
-            }
+                let (productos, ventas, clientes, cajas) = try await (prods, sales, clients, cajasData)
+                await MainActor.run { update(productos: productos, ventas: ventas, clientes: clientes, cajas: cajas) }
+            } catch { print("Dashboard error: \(error)") }
         }
     }
 
-    private func updateDashboard(productos: [[String: Any]], ventas: [[String: Any]], clientes: [[String: Any]], cajas: [[String: Any]]) {
-        let today = FirebaseService.todayString()
-        let monthPrefix = today.prefix(7)
-
-        let ventasHoy = ventas.filter { ($0["fecha"] as? String ?? "").hasPrefix(today) && $0["estado"] as? String != "anulada" }
-        let ventasHoyMonto = ventasHoy.compactMap { $0["total"] as? Double }.reduce(0, +)
-        let ventasMes = ventas.filter { ($0["fecha"] as? String ?? "").hasPrefix(monthPrefix) && $0["estado"] as? String != "anulada" }
-        let ventasMesMonto = ventasMes.compactMap { $0["total"] as? Double }.reduce(0, +)
-        let gananciasHoy = ventasHoy.reduce(0.0) { sum, v in
-            let total = v["total"] as? Double ?? 0
+    private func update(productos: [[String: Any]], ventas: [[String: Any]], clientes: [[String: Any]], cajas: [[String: Any]]) {
+        let today = FirebaseService.todayString(); let month = today.prefix(7)
+        let hoy = ventas.filter { ($0["fecha"] as? String ?? "").hasPrefix(today) && ($0["estado"] as? String) != "anulada" }
+        let mes = ventas.filter { ($0["fecha"] as? String ?? "").hasPrefix(month) && ($0["estado"] as? String) != "anulada" }
+        let ventasHoy = hoy.compactMap { $0["total"] as? Double }.reduce(0, +)
+        let ventasMes = mes.compactMap { $0["total"] as? Double }.reduce(0, +)
+        let ganancias = hoy.reduce(0.0) { sum, v in
             let items = v["items"] as? [[String: Any]] ?? []
-            let cost = items.compactMap { $0["precio_compra"] as? Double }.reduce(0, +)
-            return sum + total - cost
+            return sum + (v["total"] as? Double ?? 0) - items.compactMap { $0["precio_compra"] as? Double }.reduce(0, +)
         }
-        let deudores = clientes.filter { ($0["saldo_pendiente"] as? Double ?? 0) > 0 }
-        let stockBajo = productos.filter {
-            let stock = $0["stock_actual"] as? Int ?? 0
-            let min = $0["stock_minimo"] as? Int ?? 0
-            return stock > 0 && stock <= min
-        }
-        let valorInventario = productos.compactMap { p -> Double? in
-            let stock = p["stock_actual"] as? Int ?? 0
-            let cost = p["precio_compra"] as? Double ?? 0
-            return stock > 0 ? Double(stock) * cost : nil
+        let deudores = clientes.filter { ($0["saldo_pendiente"] as? Double ?? 0) > 0 }.count
+        let valInv = productos.compactMap { p -> Double? in
+            let s = p["stock_actual"] as? Int ?? 0; return s > 0 ? Double(s) * (p["precio_compra"] as? Double ?? 0) : nil
         }.reduce(0, +)
-
-        let cajaAbierta = cajas.first { $0["estado"] as? String == "abierta" }
-        let balanceCaja = (cajaAbierta?["ingresos"] as? Double ?? 0) - (cajaAbierta?["egresos"] as? Double ?? 0)
-
-        updateKPI(values: [
-            FirebaseService.formatMoney(ventasHoyMonto),
-            FirebaseService.formatMoney(ventasMesMonto),
-            FirebaseService.formatMoney(gananciasHoy),
-            "\(deudores.count)",
-            FirebaseService.formatMoney(valorInventario),
-            "\(stockBajo.count)"
-        ])
-        updateStats(productos: productos.count, clientes: clientes.count, caja: balanceCaja > 0 ? "\(Int(balanceCaja))" : "Cerrada")
-        updateRecentSales(ventasHoy)
-        updateLowStock(stockBajo)
-    }
-
-    private func updateKPI(values: [String]) {
-        for (i, label) in kpiValueLabels.enumerated() {
-            if i < values.count {
-                label.text = values[i]
-            }
+        let bajo = productos.filter {
+            let s = $0["stock_actual"] as? Int ?? 0; return s > 0 && s <= ($0["stock_minimo"] as? Int ?? 0)
         }
-    }
 
-    private func updateStats(productos: Int, clientes: Int, caja: String) {
-        if statCountLabels.count >= 2 {
-            statCountLabels[0].text = "\(productos)"
-            statCountLabels[1].text = "\(clientes)"
-            statCountLabels[2].text = caja
-        }
-    }
+        kpiValues = [FirebaseService.formatMoney(ventasHoy), FirebaseService.formatMoney(ventasMes), FirebaseService.formatMoney(ganancias), "\(deudores)", FirebaseService.formatMoney(valInv), "\(bajo.count)"]
+        kpiCollection.reloadData()
 
-    private func updateRecentSales(_ sales: [[String: Any]]) {
-        recentSalesStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        for sale in sales.prefix(5) {
-            let label = UILabel()
-            let total = FirebaseService.formatMoney(sale["total"] as? Double ?? 0)
-            let cliente = sale["cliente"] as? String ?? "Mostrador"
-            let hora = (sale["fecha"] as? String ?? "").suffix(8)
-            label.text = "\(cliente) - \(total) [\(hora)]"
-            label.font = UIFont.systemFont(ofSize: 13)
-            label.textColor = .darkGray
-            recentSalesStack.addArrangedSubview(label)
+        // Recent sales
+        recentsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        for v in hoy.prefix(5) {
+            let l = UILabel(); l.font = .systemFont(ofSize: 13); l.textColor = .darkGray
+            l.text = "\(v["cliente"] as? String ?? "Mostrador") — \(FirebaseService.formatMoney(v["total"] as? Double ?? 0)) [\((v["fecha"] as? String ?? "").suffix(8))]"
+            recentsStack.addArrangedSubview(l)
         }
-        if sales.isEmpty {
-            let label = UILabel()
-            label.text = "No hay ventas hoy"
-            label.font = UIFont.systemFont(ofSize: 13)
-            label.textColor = .gray
-            recentSalesStack.addArrangedSubview(label)
-        }
-    }
+        if hoy.isEmpty { recentsStack.addArrangedSubview(emptyLabel("Sin ventas hoy")) }
 
-    private func updateLowStock(_ products: [[String: Any]]) {
+        // Low stock
         lowStockStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        for p in products.prefix(10) {
-            let label = UILabel()
-            let name = p["nombre"] as? String ?? "?"
-            let stock = p["stock_actual"] as? Int ?? 0
-            let min = p["stock_minimo"] as? Int ?? 0
-            label.text = "\(name) - Stock: \(stock) / Mín: \(min)"
-            label.font = UIFont.systemFont(ofSize: 13)
-            label.textColor = .systemRed
-            lowStockStack.addArrangedSubview(label)
+        for p in bajo.prefix(10) {
+            let l = UILabel(); l.font = .systemFont(ofSize: 13); l.textColor = .systemRed
+            l.text = "\(p["nombre"] as? String ?? "?") — Stock: \(p["stock_actual"] as? Int ?? 0)/\(p["stock_minimo"] as? Int ?? 0)"
+            lowStockStack.addArrangedSubview(l)
         }
-        if products.isEmpty {
-            let label = UILabel()
-            label.text = "No hay productos con stock bajo"
-            label.font = UIFont.systemFont(ofSize: 13)
-            label.textColor = .gray
-            lowStockStack.addArrangedSubview(label)
-        }
+        if bajo.isEmpty { lowStockStack.addArrangedSubview(emptyLabel("Todo en orden")) }
     }
 
-    private func createCard() -> UIView {
-        let card = UIView()
-        card.backgroundColor = .white
-        card.layer.cornerRadius = 16
-        card.layer.shadowColor = UIColor.black.cgColor
-        card.layer.shadowOpacity = 0.05
-        card.layer.shadowRadius = 8
-        card.layer.shadowOffset = CGSize(width: 0, height: 2)
-        return card
-    }
+    private func emptyLabel(_ text: String) -> UILabel { let l = UILabel(); l.text = text; l.font = .systemFont(ofSize: 13); l.textColor = .gray; return l }
+}
 
-    private func createKPICard(title: String, icon: String, index: Int) -> UIView {
-        let card = createCard()
-
-        let iconView = UIImageView(image: UIImage(systemName: icon))
-        iconView.tintColor = UIColor(red: 0.1, green: 0.3, blue: 0.24, alpha: 1)
-        iconView.translatesAutoresizingMaskIntoConstraints = false
-        card.addSubview(iconView)
-
-        let valueLabel = UILabel()
-        valueLabel.text = "$0"
-        valueLabel.font = UIFont.boldSystemFont(ofSize: 18)
-        valueLabel.textColor = UIColor(red: 0.1, green: 0.3, blue: 0.24, alpha: 1)
-        valueLabel.translatesAutoresizingMaskIntoConstraints = false
-        kpiValueLabels.append(valueLabel)
-        card.addSubview(valueLabel)
-
-        let titleLabel = UILabel()
-        titleLabel.text = title
-        titleLabel.font = UIFont.systemFont(ofSize: 10)
-        titleLabel.textColor = .gray
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        card.addSubview(titleLabel)
-
+// MARK: - KPI Cell
+class KPICell: UICollectionViewCell {
+    private let icon = UIImageView(); private let title = UILabel(); private let value = UILabel()
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = .white; layer.cornerRadius = 12
+        layer.shadowColor = UIColor.black.cgColor; layer.shadowOpacity = 0.03; layer.shadowRadius = 4; layer.shadowOffset = CGSize(width: 0, height: 1)
+        icon.contentMode = .scaleAspectFit; icon.translatesAutoresizingMaskIntoConstraints = false
+        title.font = .systemFont(ofSize: 11); title.textColor = .gray; title.translatesAutoresizingMaskIntoConstraints = false
+        value.font = .systemFont(ofSize: 20, weight: .bold); value.textColor = UIColor(red: 0.1, green: 0.3, blue: 0.24, alpha: 1)
+        value.adjustsFontSizeToFitWidth = true; value.minimumScaleFactor = 0.5; value.translatesAutoresizingMaskIntoConstraints = false
+        [icon, title, value].forEach { contentView.addSubview($0) }
         NSLayoutConstraint.activate([
-            iconView.topAnchor.constraint(equalTo: card.topAnchor, constant: 12),
-            iconView.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 12),
-            iconView.widthAnchor.constraint(equalToConstant: 22),
-            iconView.heightAnchor.constraint(equalToConstant: 22),
-            valueLabel.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -12),
-            valueLabel.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 12),
-            valueLabel.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -12),
-            titleLabel.bottomAnchor.constraint(equalTo: valueLabel.topAnchor, constant: -2),
-            titleLabel.leadingAnchor.constraint(equalTo: valueLabel.leadingAnchor),
-            titleLabel.trailingAnchor.constraint(equalTo: valueLabel.trailingAnchor)
+            icon.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 14),
+            icon.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 14),
+            icon.widthAnchor.constraint(equalToConstant: 22), icon.heightAnchor.constraint(equalToConstant: 22),
+            title.topAnchor.constraint(equalTo: icon.bottomAnchor, constant: 8),
+            title.leadingAnchor.constraint(equalTo: icon.leadingAnchor),
+            value.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 2),
+            value.leadingAnchor.constraint(equalTo: title.leadingAnchor),
+            value.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -10),
         ])
-
-        return card
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    func configure(title t: String, icon name: String, value v: String) {
+        title.text = t; value.text = v; icon.image = UIImage(systemName: name)
+        icon.tintColor = UIColor(red: 0.1, green: 0.3, blue: 0.24, alpha: 1)
     }
 }

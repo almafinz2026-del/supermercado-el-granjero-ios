@@ -1,19 +1,74 @@
 import UIKit
 
-class ReportesViewController: UIViewController {
+class ReportesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+
+    private let tableView = UITableView()
+    private let segControl = UISegmentedControl(items: ["Ventas", "Ganancias", "Productos"])
+    private var reportData: [[String: Any]] = []
+    private var titleText = ""
+    private let fb = FirebaseService.shared
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor(red: 0.92, green: 0.90, blue: 0.86, alpha: 1)
-        title = "Reportes"
-        let label = UILabel()
-        label.text = "📊 Reportes - Próximamente"
-        label.font = UIFont.boldSystemFont(ofSize: 20)
-        label.textAlignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(label)
+        view.backgroundColor = UIColor(red: 0.92, green: 0.90, blue: 0.86, alpha: 1); title = "Reportes"
+        segControl.selectedSegmentIndex = 0; segControl.addTarget(self, action: #selector(loadData), for: .valueChanged); segControl.translatesAutoresizingMaskIntoConstraints = false; view.addSubview(segControl)
+        tableView.dataSource = self; tableView.delegate = self; tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell"); tableView.backgroundColor = .clear; tableView.translatesAutoresizingMaskIntoConstraints = false; view.addSubview(tableView)
         NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            segControl.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8), segControl.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16), segControl.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            tableView.topAnchor.constraint(equalTo: segControl.bottomAnchor, constant: 8), tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor), tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor), tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+        loadData()
+    }
+
+    @objc private func loadData() {
+        Task {
+            do {
+                switch segControl.selectedSegmentIndex {
+                case 0:
+                    titleText = "Ventas del Mes"
+                    let ventas = try await fb.getList("ventas")
+                    let month = FirebaseService.todayString().prefix(7)
+                    let delMes = ventas.filter { ($0["fecha"] as? String ?? "").hasPrefix(month) && $0["estado"] as? String != "anulada" }
+                    reportData = delMes.sorted { ($0["fecha"] as? String ?? "") > ($1["fecha"] as? String ?? "") }
+                case 1:
+                    titleText = "Ganancias (Hoy)"
+                    let ventas = try await fb.getList("ventas")
+                    let today = FirebaseService.todayString()
+                    let deHoy = ventas.filter { ($0["fecha"] as? String ?? "").hasPrefix(today) && $0["estado"] as? String != "anulada" }
+                    reportData = deHoy.map { v in
+                        let total = v["total"] as? Double ?? 0
+                        let items = v["items"] as? [[String: Any]] ?? []
+                        let cost = items.compactMap { $0["precio_compra"] as? Double }.reduce(0, +)
+                        var r = v; r["ganancia"] = total - cost; return r
+                    }
+                default:
+                    titleText = "Top Productos"
+                    let productos = try await fb.getList("productos")
+                    reportData = productos.sorted { ($0["stock_actual"] as? Int ?? 0) < ($1["stock_actual"] as? Int ?? 0) }
+                }
+                tableView.reloadData()
+            } catch { print("Error: \(error)") }
+        }
+    }
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { reportData.count }
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
+        cell.textLabel?.font = UIFont.systemFont(ofSize: 13); cell.backgroundColor = .white
+        switch segControl.selectedSegmentIndex {
+        case 0:
+            let v = reportData[indexPath.row]; let total = FirebaseService.formatMoney(v["total"] as? Double ?? 0)
+            let cliente = v["cliente"] as? String ?? "Mostrador"; let fecha = (v["fecha"] as? String ?? "").prefix(16)
+            cell.textLabel?.text = "\(cliente) - \(total) [\(fecha)]"
+        case 1:
+            let v = reportData[indexPath.row]; let ganancia = FirebaseService.formatMoney(v["ganancia"] as? Double ?? 0)
+            let cliente = v["cliente"] as? String ?? "Mostrador"
+            cell.textLabel?.text = "\(cliente) - Ganancia: \(ganancia)"
+        default:
+            let p = reportData[indexPath.row]; let name = p["nombre"] as? String ?? "?"
+            let stock = p["stock_actual"] as? Int ?? 0
+            cell.textLabel?.text = "\(name) - Stock: \(stock)"
+        }
+        return cell
     }
 }

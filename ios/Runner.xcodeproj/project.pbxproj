@@ -40,7 +40,9 @@
 		10000042 /* CierresViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000042 /* CierresViewController.swift */; };
 		10000043 /* ConfiguracionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000043 /* ConfiguracionViewController.swift */; };
 		10000044 /* BarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000044 /* BarViewController.swift */; };
+		10000099 /* BarDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000099 /* BarDetailViewController.swift */; };
 		10000045 /* FacturacionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000045 /* FacturacionViewController.swift */; };
+		10000046 /* ComprasProgramadasViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000046 /* ComprasProgramadasViewController.swift */; };
 		10000050 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 20000050 /* Assets.xcassets */; };
 		10000051 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 20000051 /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
@@ -79,7 +81,9 @@
 		20000042 /* CierresViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CierresViewController.swift; sourceTree = "<group>"; };
 		20000043 /* ConfiguracionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfiguracionViewController.swift; sourceTree = "<group>"; };
 		20000044 /* BarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarViewController.swift; sourceTree = "<group>"; };
+		20000099 /* BarDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarDetailViewController.swift; sourceTree = "<group>"; };
 		20000045 /* FacturacionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FacturacionViewController.swift; sourceTree = "<group>"; };
+		20000046 /* ComprasProgramadasViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComprasProgramadasViewController.swift; sourceTree = "<group>"; };
 		20000050 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		20000051 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = GoogleService-Info.plist; sourceTree = "<group>"; };
 		20000052 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -168,6 +172,7 @@
 				40000023 /* Configuracion */,
 				40000024 /* Bar */,
 				40000025 /* Facturacion */,
+				40000026 /* ComprasProgramadas */,
 			);
 			path = Screens;
 			sourceTree = "<group>";
@@ -196,8 +201,9 @@
 		40000021 /* Usuarios */ = { isa = PBXGroup; children = (20000041 /* UsuariosViewController.swift */,); path = Usuarios; sourceTree = "<group>"; };
 		40000022 /* Cierres */ = { isa = PBXGroup; children = (20000042 /* CierresViewController.swift */,); path = Cierres; sourceTree = "<group>"; };
 		40000023 /* Configuracion */ = { isa = PBXGroup; children = (20000043 /* ConfiguracionViewController.swift */,); path = Configuracion; sourceTree = "<group>"; };
-		40000024 /* Bar */ = { isa = PBXGroup; children = (20000044 /* BarViewController.swift */,); path = Bar; sourceTree = "<group>"; };
+		40000024 /* Bar */ = { isa = PBXGroup; children = (20000044 /* BarViewController.swift */, 20000099 /* BarDetailViewController.swift */,); path = Bar; sourceTree = "<group>"; };
 		40000025 /* Facturacion */ = { isa = PBXGroup; children = (20000045 /* FacturacionViewController.swift */,); path = Facturacion; sourceTree = "<group>"; };
+		40000026 /* ComprasProgramadas */ = { isa = PBXGroup; children = (20000046 /* ComprasProgramadasViewController.swift */,); path = ComprasProgramadas; sourceTree = "<group>"; };
 		40000010 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -305,7 +311,9 @@
 				10000042 /* CierresViewController.swift in Sources */,
 				10000043 /* ConfiguracionViewController.swift in Sources */,
 				10000044 /* BarViewController.swift in Sources */,
+				10000099 /* BarDetailViewController.swift in Sources */,
 				10000045 /* FacturacionViewController.swift in Sources */,
+				10000046 /* ComprasProgramadasViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

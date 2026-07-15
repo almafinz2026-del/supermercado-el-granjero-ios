@@ -62,10 +62,18 @@ class SessionManager {
     
     func setUser(_ user: [String: Any], roles: [[String: Any]] = []) {
         currentUser = user
+        let rolName = (user["rol"] as? String ?? "").lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let isUserAdmin = (user["username"] as? String ?? "").lowercased() == "admin" || (user["username"] as? String ?? "").lowercased() == "nelson" || rolName == "jefe" || rolName == "admin" || rolName == "administrador"
+        
+        if isUserAdmin {
+            permisos = Self.allPermisos
+            permCount = Self.allPermisos.count
+            return
+        }
+        
         var permisoIds = user["permiso_ids"] as? [Int] ?? []
         if permisoIds.isEmpty {
-            let rolName = user["rol"] as? String ?? ""
-            if let role = roles.first(where: { $0["nombre"] as? String == rolName }) {
+            if let role = roles.first(where: { ($0["nombre"] as? String ?? "").lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == rolName }) {
                 permisoIds = role["permiso_ids"] as? [Int] ?? []
             }
         }
